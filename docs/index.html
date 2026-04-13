@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Inspector — Your AI is failing 3 steps before you notice</title>
+<meta name="description" content="Open-source context window monitoring for AI systems. Detects domain alignment degradation before output fails. MCP-aware, drops into any workflow.">
+<meta property="og:title" content="Context Inspector — Statistical Early Warning for AI Degradation">
+<meta property="og:description" content="The bell curve sees it coming. The output doesn't. Monitor your AI context in real time.">
+<style>
+:root{--bg:#0a0a0a;--surface:#111;--surface2:#1a1a1a;--border:#262626;--text:#e5e5e5;--muted:#a3a3a3;--accent:#f97316;--accent2:#fb923c;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;--purple:#a855f7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.container{max-width:900px;margin:0 auto;padding:0 24px}
+a{color:var(--accent);text-decoration:none;font-weight:600} a:hover{color:var(--accent2)}
+
+/* NAV */
+nav{border-bottom:1px solid var(--border);padding:16px 0}
+nav .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.1rem;font-weight:700} .logo span{color:var(--accent)}
+.nav-links{display:flex;gap:16px;font-size:0.85rem}
+.nav-links a{color:var(--muted)} .nav-links a:hover{color:var(--accent)}
+
+/* HERO */
+.hero{padding:80px 0 60px;text-align:center}
+.hero h1{font-size:clamp(2rem,5vw,3rem);font-weight:800;line-height:1.1;letter-spacing:-0.03em;margin-bottom:20px}
+.hero h1 em{color:var(--accent);font-style:normal}
+.hero .sub{font-size:1.15rem;color:var(--muted);max-width:640px;margin:0 auto 32px}
+.hero .cmd{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 28px;font-family:'SF Mono',Menlo,monospace;font-size:0.95rem;color:var(--green);margin-bottom:24px;text-align:left;max-width:100%;overflow-x:auto}
+.hero .cmd .comment{color:var(--muted)}
+.hero .cta-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;font-weight:700;font-size:0.95rem;padding:12px 28px;border-radius:6px;text-decoration:none;transition:all .2s;border:none;cursor:pointer}
+.btn-primary{background:var(--accent);color:#000} .btn-primary:hover{background:var(--accent2)}
+.btn-ghost{border:2px solid var(--border);color:var(--text);background:transparent} .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* DEMO */
+.demo{padding:60px 0;border-top:1px solid var(--border);text-align:center}
+.demo h2{font-size:1.6rem;font-weight:700;margin-bottom:8px}
+.demo .sub{color:var(--muted);margin-bottom:24px}
+.demo-frame{background:var(--surface);border:2px solid var(--border);border-radius:12px;overflow:hidden;max-width:800px;margin:0 auto 24px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.9rem}
+.demo-frame img,.demo-frame video{width:100%;height:100%;object-fit:cover}
+.demo-caption{color:var(--muted);font-size:0.85rem;font-style:italic}
+
+/* SIGNAL */
+.signal{padding:60px 0;border-top:1px solid var(--border)}
+.signal h2{font-size:1.6rem;font-weight:700;margin-bottom:24px;text-align:center}
+.signal-table{width:100%;border-collapse:collapse;margin:0 auto;max-width:700px}
+.signal-table th{text-align:left;padding:10px 16px;background:var(--surface);font-size:0.7rem;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;border-bottom:1px solid var(--border)}
+.signal-table td{padding:10px 16px;border-bottom:1px solid var(--border);font-size:0.9rem}
+.signal-table .step{font-weight:700;font-family:monospace;color:var(--accent)}
+.signal-table .pass{color:var(--green)} .signal-table .fail{color:var(--red)} .signal-table .warn{color:var(--accent)}
+
+/* PAPER */
+.paper{padding:60px 0;border-top:1px solid var(--border)}
+.paper h2{font-size:1.6rem;font-weight:700;margin-bottom:24px}
+.paper-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
+.paper-card blockquote{font-size:1.1rem;font-style:italic;border-left:3px solid var(--accent);padding-left:16px;color:var(--muted);margin-bottom:16px}
+.paper-card p{color:var(--muted);font-size:0.9rem;margin-bottom:12px}
+.paper-card h3{font-size:1.1rem;font-weight:700;margin-bottom:12px}
+.paper-card ul{color:var(--muted);font-size:0.85rem;padding-left:20px;margin-bottom:16px}
+.paper-card li{margin-bottom:6px}
+
+/* COMPARE */
+.compare{padding:60px 0;border-top:1px solid var(--border)}
+.compare h2{font-size:1.6rem;font-weight:700;margin-bottom:24px;text-align:center}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;margin:0 auto}
+.compare-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px}
+.compare-col h3{font-size:1rem;font-weight:700;margin-bottom:4px}
+.compare-col .tag{display:inline-block;font-size:0.65rem;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:3px;margin-bottom:12px;font-weight:700}
+.compare-col.them .tag{background:#3b82f620;color:var(--blue)}
+.compare-col.us .tag{background:#f9731620;color:var(--accent)}
+.compare-col p{color:var(--muted);font-size:0.85rem;margin-bottom:8px}
+.compare-col ul{color:var(--muted);font-size:0.8rem;padding-left:16px}
+.compare-col li{margin-bottom:4px}
+
+/* INSTALL */
+.install{padding:60px 0;border-top:1px solid var(--border);text-align:center}
+.install h2{font-size:1.6rem;font-weight:700;margin-bottom:12px}
+.install .sub{color:var(--muted);margin-bottom:24px}
+.install-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:700px;margin:0 auto 32px}
+.install-method{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:left}
+.install-method h4{font-size:0.75rem;text-transform:uppercase;color:var(--accent);letter-spacing:.08em;margin-bottom:8px}
+.install-method code{display:block;background:var(--bg);padding:10px;border-radius:4px;font-size:0.8rem;color:var(--green);margin-bottom:8px;overflow-x:auto;white-space:nowrap}
+.install-method p{color:var(--muted);font-size:0.75rem}
+
+/* CTA */
+.final-cta{padding:80px 0;border-top:1px solid var(--border);text-align:center}
+.final-cta h2{font-size:1.8rem;font-weight:800;margin-bottom:12px}
+.final-cta .sub{color:var(--muted);font-size:1rem;margin-bottom:24px}
+
+footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color:var(--muted);font-size:0.8rem}
+
+@media(max-width:700px){.paper-card,.compare-grid,.install-methods{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="container">
+  <div class="logo">Context <span>Inspector</span></div>
+  <div class="nav-links">
+    <a href="#demo">Demo</a>
+    <a href="#paper">White Paper</a>
+    <a href="https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector">GitHub</a>
+    <a href="https://contrarianai-landing.onrender.com">contrarianAI</a>
+  </div>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div class="container">
+  <h1>Your AI is failing <em>3 steps</em> before you notice</h1>
+  <p class="sub">Context Inspector monitors the statistical structure of AI context windows in real time. It detects domain alignment degradation — the leading indicator of output failure — before the output itself degrades.</p>
+
+  <div class="cmd">
+    <span class="comment"># Drop into any MCP workflow</span><br>
+    git clone https://github.com/kevin-luddy39/contrarianAI.git<br>
+    cd contrarianAI/tools/context-inspector && npm install<br>
+    node mcp-server.js <span class="comment"># Add to .mcp.json</span>
+  </div>
+
+  <div class="cta-row">
+    <a href="https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector" class="btn btn-primary">View on GitHub</a>
+    <a href="#paper" class="btn btn-ghost">Read the White Paper</a>
+  </div>
+</div>
+</section>
+
+<!-- DEMO -->
+<section class="demo" id="demo">
+<div class="container">
+  <h2>Watch the bell curve warn you before your agent fails</h2>
+  <p class="sub">30 seconds. Step 10 (healthy) to step 15 (total collapse). The graph catches it at step 11.</p>
+
+  <div class="demo-frame">
+    <!-- TODO: Replace with actual screen recording GIF/video -->
+    <!-- Record: open context_rot_dashboard.html, select Three Little Pigs, -->
+    <!-- slowly scrub step slider from 10 to 15, showing bell curve collapse -->
+    [Screen recording: dashboard step slider 10 → 15, bell curve collapsing]
+  </div>
+  <p class="demo-caption">"The output still scored 0.85 at step 11. The bell curve had already spiked 56%."</p>
+</div>
+</section>
+
+<!-- THE SIGNAL -->
+<section class="signal">
+<div class="container">
+  <h2>The signal the output doesn't show you</h2>
+  <table class="signal-table">
+    <thead>
+      <tr><th>Step</th><th>Phase</th><th>Domain &sigma;</th><th>Bell Curve</th><th>Output (Judge)</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="step">10</td><td>Full story loaded</td><td>0.225</td><td>Tight, right-shifted</td><td class="pass">0.85</td><td class="pass">Healthy</td></tr>
+      <tr><td class="step">11</td><td>+ Cinderella ch.1</td><td class="warn">0.351 (+56%)</td><td class="warn">Spike — bimodal emerging</td><td class="pass">0.85</td><td class="warn">Graph sees it. Output doesn't.</td></tr>
+      <tr><td class="step">12</td><td>+ Cinderella ch.2 [ROT]</td><td>0.290</td><td>Flattening</td><td class="pass">0.75</td><td class="warn">Declining. Still "passing."</td></tr>
+      <tr><td class="step">13</td><td>+ Cinderella ch.3</td><td>0.269</td><td>Flattening</td><td class="pass">0.75</td><td class="warn">3 steps of warning.</td></tr>
+      <tr><td class="step">14</td><td>+ Cinderella ch.4</td><td>0.248</td><td>Nearly flat</td><td class="pass">0.75</td><td class="warn">Last chance to intervene.</td></tr>
+      <tr><td class="step">15</td><td>+ Cinderella ch.5 [ROT]</td><td class="fail">0.053</td><td class="fail">Collapsed</td><td class="fail">0.00</td><td class="fail">Total failure. No recovery.</td></tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<!-- WHITE PAPER -->
+<section class="paper" id="paper">
+<div class="container">
+  <h2>The Research</h2>
+  <div class="paper-card">
+    <div>
+      <blockquote>"We found that context degradation follows predictable statistical patterns. The bell curve reveals them early — before output evaluation catches up."</blockquote>
+      <p>The white paper documents a controlled experiment: fairy tales fed through an AI system with a constrained context window, progressive contamination, and forced summarization. The bell curve caught the decay 3 steps before the output failed.</p>
+      <a href="whitepaper.md" class="btn btn-primary" style="margin-top:12px">Read the White Paper</a>
+    </div>
+    <div>
+      <h3>From White Paper to Tool</h3>
+      <p>Every metric in Context Inspector was designed to surface the specific signals the research identified:</p>
+      <ul>
+        <li><strong>Fixed domain reference</strong> — the paper showed that scoring against a shifting vocabulary masks drift. The tool freezes domain terms at baseline.</li>
+        <li><strong>&sigma; trend monitoring</strong> — the paper found &sigma; is the leading indicator. The tool tracks it across turns.</li>
+        <li><strong>Bell curve visualization</strong> — the paper showed that bimodal distributions signal contamination. The tool renders the histogram + Gaussian fit + rug plot in real time.</li>
+        <li><strong>Per-chunk rug plot</strong> — the paper showed that individual chunk scores tell the eviction story. The tool plots every measurement.</li>
+      </ul>
+      <p><strong>The tool is the research, productized.</strong></p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare" id="compare">
+<div class="container">
+  <h2>Context Inspector vs MCP Inspector</h2>
+  <div class="compare-grid">
+    <div class="compare-col them">
+      <h3>Anthropic MCP Inspector</h3>
+      <div class="tag">Manual debugging</div>
+      <p>Great for verifying that MCP tools return correct data. Manual testing of individual tool calls.</p>
+      <ul>
+        <li>Tool input/output inspection</li>
+        <li>Error messages, latency</li>
+        <li>Schema validation</li>
+        <li>One request at a time</li>
+      </ul>
+      <p><strong>Answers:</strong> "Is my tool call working?"</p>
+    </div>
+    <div class="compare-col us">
+      <h3>Context Inspector</h3>
+      <div class="tag">Proactive monitoring</div>
+      <p>Watches the statistical health of the context window across turns. Alerts before output degrades.</p>
+      <ul>
+        <li>Domain alignment bell curve</li>
+        <li>&sigma; trend detection</li>
+        <li>Per-chunk scoring + rug plot</li>
+        <li>Continuous monitoring across workflow</li>
+      </ul>
+      <p><strong>Answers:</strong> "Is my context about to fail?"</p>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:16px;color:var(--muted);font-size:0.85rem"><strong>They're complementary.</strong> MCP Inspector verifies tools work. Context Inspector verifies the context built from tool results remains structurally sound.</p>
+</div>
+</section>
+
+<!-- INSTALL -->
+<section class="install" id="install">
+<div class="container">
+  <h2>Three ways to use it</h2>
+  <p class="sub">MCP server for AI workflows. CLI for scripts. Web dashboard for exploration.</p>
+  <div class="install-methods">
+    <div class="install-method">
+      <h4>MCP Server</h4>
+      <code>node mcp-server.js</code>
+      <p>Add to .mcp.json. 4 tools: analyze_context, get_bell_curve, get_chunks, compare_alignment. Drops into Claude Code, Cursor, or any MCP client.</p>
+    </div>
+    <div class="install-method">
+      <h4>CLI</h4>
+      <code>node cli.js file.txt --verbose</code>
+      <p>Reports &sigma;, mean, histogram, per-chunk breakdown. Pipe JSON output to jq or store for comparison. Reads from stdin.</p>
+    </div>
+    <div class="install-method">
+      <h4>Web Dashboard</h4>
+      <code>node web-server.js</code>
+      <p>Interactive bell curve with rug plot, &plusmn;1&sigma;/2&sigma; bands, Gaussian fit. Concentrator toggle. Chunk size slider. Real-time analysis.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+<div class="container">
+  <h2>The output tells you when the system has failed.<br>The bell curve tells you when it's <em style="color:var(--accent)">about to</em>.</h2>
+  <p class="sub">Open source. MCP-aware. Drops into any AI workflow.</p>
+  <div class="cta-row">
+    <a href="https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector" class="btn btn-primary">Get Started on GitHub</a>
+    <a href="whitepaper.md" class="btn btn-ghost">Read the White Paper</a>
+  </div>
+  <p style="margin-top:24px;color:var(--muted);font-size:0.85rem">Need help diagnosing your AI stack? <a href="https://contrarianai-landing.onrender.com">Request the AI Production Diagnostic</a> from contrarianAI.</p>
+</div>
+</section>
+
+<footer>
+<div class="container">
+  <p>Built by <a href="https://contrarianai-landing.onrender.com">contrarianAI</a>. We find what's actually wrong with your AI before your users do.</p>
+</div>
+</footer>
+
+</body>
+</html>
