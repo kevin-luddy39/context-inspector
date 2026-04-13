@@ -5,3 +5,6 @@
 - Added `.claude/` configuration directory with SSA-LAB commands, example specs, and settings.
 - Added `CLAUDE.md` with project guidance for Claude Code.
 - Created this diary to track ongoing changes.
+- Strengthened README hero with the drop-in MCP inspector positioning and a research-backed callout linking to `docs/whitepaper.md`.
+- Expanded the footer into a full consulting CTA for contrarianAI (context audits, architecture reviews, white-paper-grade diagnostics).
+- Set the GitHub repo description via `gh repo edit` (was previously empty).

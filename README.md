@@ -1,8 +1,12 @@
 # Context Inspector
 
-**Your AI system is failing 3 steps before you notice. This tool shows you when.**
+> Drop-in MCP inspector that watches the statistical health of AI context windows — live bell curves catch domain-alignment degradation 3 steps before output failure.
+
+**Your AI system is failing 3 steps before you notice. This drop-in MCP inspector shows you when — with live graphical bell curves tracking domain-alignment degradation.**
 
 Context Inspector monitors the statistical structure of AI context windows in real time. It detects domain alignment degradation — the leading indicator of output failure — before the output itself degrades.
+
+📄 **Research-backed:** Every signal in this tool traces to a controlled experiment documented in the [white paper](docs/whitepaper.md).
 
 ```bash
 # Drop into any workflow as an MCP server
@@ -237,4 +241,14 @@ MIT
 
 ---
 
-**Built by [contrarianAI](https://contrarianai-landing.onrender.com).** We find what's actually wrong with your AI before your users do.
+## Need help diagnosing context rot in production?
+
+Context Inspector surfaces the signal. Acting on it — redesigning retrieval, rewriting prompts, rebuilding memory strategies — is where most teams get stuck.
+
+**[contrarianAI](https://contrarianai-landing.onrender.com)** consults on exactly this:
+
+- **Context audits** — we instrument your pipeline, find where the bell curve collapses, and show you why.
+- **Architecture reviews** — RAG, multi-agent, long-running chat. We pressure-test the parts you can't see failing yet.
+- **White-paper-grade diagnostics** — the same methodology documented in [`docs/whitepaper.md`](docs/whitepaper.md), applied to your system.
+
+We find what's actually wrong with your AI before your users do. → **[contrarianai-landing.onrender.com](https://contrarianai-landing.onrender.com)**
