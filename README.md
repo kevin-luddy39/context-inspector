@@ -8,6 +8,24 @@ Context Inspector monitors the statistical structure of AI context windows in re
 
 📄 **Research-backed:** Every signal in this tool traces to a controlled experiment documented in the [white paper](docs/whitepaper.md).
 
+---
+
+## Need Help Diagnosing Context Degradation?
+
+Seeing σ collapse, flattening bell curves, or early mean drift in your MCP workflow?
+
+I offer **AI System Diagnosis Consulting** this week:
+- Attach the inspector to your existing MCP setup (Claude Desktop, Cursor, custom agents, etc.)
+- Run real-time analysis on your context flows
+- Deliver a prioritized report with root causes and fixes (refresh strategies, eviction rules, prompt hygiene, etc.)
+- Built from the research in the [white paper](docs/whitepaper.md)
+
+Book a **30-minute discovery call** (free or low-cost) this week: **[cal.com/kevin-luddy-0dlzuu](https://cal.com/kevin-luddy-0dlzuu)**
+
+Let's find what's actually wrong with your AI before your users do.
+
+---
+
 ```bash
 # Drop into any workflow as an MCP server
 npx context-inspector --mcp
