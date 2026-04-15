@@ -172,7 +172,7 @@ app.get('/api/setup/status', (req, res) => {
 });
 
 // Grant file access — scan a directory
-app.post('/api/setup/scan', (req, res) => {
+app.post('/api/setup/scan', async (req, res) => {
   const { dirPath } = req.body;
   if (!dirPath) return res.status(400).json({ error: 'dirPath required' });
 
@@ -284,15 +284,14 @@ app.post('/api/setup/scan', (req, res) => {
     } catch { /* skip */ }
   }
 
-  // Build auto-populated domain reference and sample context
-  const autoDomainRef = domainSamples.length > 0
+  // Build raw samples from files
+  const rawDomainRef = domainSamples.length > 0
     ? domainSamples.map(s => `[${s.file}]\n${s.text}`).join('\n\n')
     : null;
   const autoContextSample = contextSamples.length > 0
     ? contextSamples.map(s => `[${s.file}]\n${s.text}`).join('\n\n')
     : null;
 
-  sessionState.autoDomainRef = autoDomainRef;
   sessionState.autoContextSample = autoContextSample;
 
   // Build a summary for the AI
@@ -307,9 +306,74 @@ app.post('/api/setup/scan', (req, res) => {
     contextFilesFound: domainSamples.length,
     promptFilesFound: domainSamples.filter(s => s.type === 'prompt-file').length,
     codeWithPrompts: domainSamples.filter(s => s.type === 'code-with-prompts').length,
-    hasAutoDomain: !!autoDomainRef,
-    hasAutoContext: !!autoContextSample,
   };
+
+  // ── Ask AI to generate an ideal domain reference ────────
+  // Instead of using raw file content as the domain, ask the AI:
+  // "Given this project, what should the context domain look like?"
+  let aiDomainRef = null;
+  let aiDomainExplanation = null;
+
+  if (Anthropic && sessionState.apiKey) {
+    try {
+      // Build a project description from files + any extracted prompts
+      const projectDesc = [
+        `Project at: ${resolved}`,
+        `Files: ${files.length} (${Object.entries(extCounts).map(([k,v])=>v+k).join(', ')})`,
+        `Key files: ${files.slice(0, 20).map(f => f.relative).join(', ')}`,
+        rawDomainRef ? `\nExtracted prompt/context files:\n${rawDomainRef.slice(0, 8000)}` : '',
+      ].join('\n');
+
+      const client = new Anthropic({ apiKey: sessionState.apiKey });
+      const resp = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        temperature: 0.2,
+        messages: [{
+          role: 'user',
+          content: `I'm setting up Context Inspector to monitor AI context window health for this project. I need you to generate an ideal DOMAIN REFERENCE — a block of text that represents what "on-topic" context should look like for this project.
+
+The domain reference is used as a baseline. Context Inspector scores each chunk of the AI's context window against this reference. High alignment = on-topic. Low alignment = drift/contamination.
+
+Here is the project:
+${projectDesc}
+
+Generate a domain reference that:
+1. Contains the key terminology, concepts, and vocabulary that should appear in healthy context for this project
+2. Covers the main topics/operations the AI system handles
+3. Is written as natural prose (not a keyword list) — 300-500 words
+4. Represents what a GOOD context window would contain
+
+Respond in this exact format:
+DOMAIN_REFERENCE:
+[your generated domain reference text]
+
+EXPLANATION:
+[2-3 sentences explaining what you based this on and why these terms matter for monitoring]`
+        }],
+      });
+
+      const aiText = resp.content[0].text;
+      const refMatch = aiText.match(/DOMAIN_REFERENCE:\s*([\s\S]*?)(?:EXPLANATION:|$)/);
+      const expMatch = aiText.match(/EXPLANATION:\s*([\s\S]*?)$/);
+
+      if (refMatch) aiDomainRef = refMatch[1].trim();
+      if (expMatch) aiDomainExplanation = expMatch[1].trim();
+    } catch (err) {
+      // AI call failed — fall back to raw file content
+      console.error('AI domain generation failed:', err.message);
+    }
+  }
+
+  // Use AI-generated domain if available, otherwise fall back to raw file extracts
+  sessionState.autoDomainRef = aiDomainRef || rawDomainRef;
+  sessionState.domainSource = aiDomainRef ? 'ai-generated' : (rawDomainRef ? 'file-extracted' : 'none');
+  sessionState.domainExplanation = aiDomainExplanation;
+
+  summary.hasAutoDomain = !!sessionState.autoDomainRef;
+  summary.hasAutoContext = !!autoContextSample;
+  summary.domainSource = sessionState.domainSource;
+  summary.domainExplanation = aiDomainExplanation;
 
   sessionState.projectSummary = summary;
   res.json(summary);
@@ -346,6 +410,8 @@ app.get('/api/setup/samples', (req, res) => {
     domainReference: sessionState.autoDomainRef || null,
     contextSample: sessionState.autoContextSample || null,
     hasProject: !!sessionState.projectPath,
+    domainSource: sessionState.domainSource || 'none',
+    domainExplanation: sessionState.domainExplanation || null,
   });
 });
 

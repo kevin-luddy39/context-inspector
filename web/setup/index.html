@@ -203,7 +203,7 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
       <div class="panel" id="panel-preview">
         <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:12px;">
           <h4 style="font-size:0.75rem;text-transform:uppercase;color:var(--accent);letter-spacing:.08em;margin-bottom:6px;">Domain Reference (baseline — what "on-topic" means)</h4>
-          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Paste representative text from your domain, or scan a project in the Setup tab. The analysis scores your input text against this reference.</p>
+          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">This defines what "on-topic" means. When you scan a project, the AI generates this automatically based on your codebase. You can accept it, edit it, or clear it and write your own.</p>
           <textarea id="domainRefText" placeholder="Paste domain-specific text here (e.g., your system prompt, key documentation, or representative content)..." style="width:100%;min-height:60px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical"></textarea>
           <div id="domainStatus" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
         </div>
@@ -311,10 +311,17 @@ async function scanProject() {
   }
   addMessage('system', scanMsg);
 
-  // Auto-populate Preview tab with extracted samples
+  // Auto-populate Preview tab with AI-generated domain
   if (data.hasAutoDomain || data.hasAutoContext) {
     loadSamples();
-    addMessage('system', 'Preview tab auto-populated with extracted domain reference and sample context from your project.');
+    if (data.domainSource === 'ai-generated') {
+      addMessage('system', 'I analyzed your project and generated a domain reference — this is what "on-topic" context should look like for your system. Check the Preview tab. You can run with it or clear it and write your own.');
+      if (data.domainExplanation) {
+        addMessage('system', 'Why this domain: ' + data.domainExplanation);
+      }
+    } else {
+      addMessage('system', 'Preview tab populated with content extracted from your project files. Consider chatting with the wizard for a better AI-generated domain reference.');
+    }
   }
 
   quickChat('I just scanned my project at ' + dir + '. Analyze the structure and suggest configuration for context-inspector.');
@@ -455,15 +462,28 @@ async function loadSamples() {
   try {
     const r = await fetch('/api/setup/samples');
     const data = await r.json();
+    const statusEl = document.getElementById('domainStatus');
     if (data.domainReference) {
       document.getElementById('domainRefText').value = data.domainReference;
-      document.getElementById('domainStatus').textContent = 'Auto-populated from project scan';
-      document.getElementById('domainStatus').style.color = 'var(--green)';
+      if (data.domainSource === 'ai-generated') {
+        statusEl.innerHTML = '<span style="color:var(--green);">AI-generated domain reference</span>' +
+          (data.domainExplanation ? ' — ' + data.domainExplanation : '') +
+          '<br><button class="btn btn-ghost" onclick="clearDomain()" style="margin-top:6px;font-size:0.7rem;">Clear and write my own</button>';
+      } else {
+        statusEl.innerHTML = '<span style="color:var(--accent);">Extracted from project files</span> (for a better reference, chat with the wizard)' +
+          '<br><button class="btn btn-ghost" onclick="clearDomain()" style="margin-top:6px;font-size:0.7rem;">Clear and write my own</button>';
+      }
     }
     if (data.contextSample) {
       document.getElementById('previewText').value = data.contextSample;
     }
   } catch { /* silent */ }
+}
+
+function clearDomain() {
+  document.getElementById('domainRefText').value = '';
+  document.getElementById('domainStatus').textContent = 'Cleared. Paste your own domain reference text.';
+  document.getElementById('domainStatus').style.color = 'var(--muted)';
 }
 
 // ── Findings ───────────────────────────────────────
