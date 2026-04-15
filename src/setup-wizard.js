@@ -176,10 +176,11 @@ app.post('/api/setup/scan', (req, res) => {
   const { dirPath } = req.body;
   if (!dirPath) return res.status(400).json({ error: 'dirPath required' });
 
-  // Handle Windows paths from browser on WSL
+  // Handle Windows paths: convert to WSL only if running under WSL
   let resolved = dirPath;
-  if (/^[A-Z]:\\/i.test(dirPath)) {
-    // Convert Windows path to WSL: C:\Users\foo → /mnt/c/Users/foo
+  const isWSL = process.platform === 'linux' && fs.existsSync('/proc/version') &&
+    fs.readFileSync('/proc/version', 'utf-8').toLowerCase().includes('microsoft');
+  if (isWSL && /^[A-Z]:\\/i.test(dirPath)) {
     resolved = '/mnt/' + dirPath[0].toLowerCase() + dirPath.slice(2).replace(/\\/g, '/');
   }
   resolved = path.resolve(resolved);
@@ -238,9 +239,11 @@ app.post('/api/setup/read-file', (req, res) => {
   const { filePath } = req.body;
   if (!filePath) return res.status(400).json({ error: 'filePath required' });
 
-  // Handle Windows paths from browser on WSL
+  // Handle Windows paths: convert to WSL only if running under WSL
   let resolved = filePath;
-  if (/^[A-Z]:\\/i.test(filePath)) {
+  const isWSL2 = process.platform === 'linux' && fs.existsSync('/proc/version') &&
+    fs.readFileSync('/proc/version', 'utf-8').toLowerCase().includes('microsoft');
+  if (isWSL2 && /^[A-Z]:\\/i.test(filePath)) {
     resolved = '/mnt/' + filePath[0].toLowerCase() + filePath.slice(2).replace(/\\/g, '/');
   }
   resolved = path.resolve(resolved);
