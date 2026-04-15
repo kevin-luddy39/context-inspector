@@ -27,14 +27,26 @@ Let's find what's actually wrong with your AI before your users do.
 ---
 
 ```bash
-# Drop into any workflow as an MCP server
-npx context-inspector --mcp
+# AI-guided setup — the easiest way to start
+npx contrarianai-context-inspector --setup
 
-# Or analyze a file from the command line
-npx context-inspector analyze conversation.txt --domain --verbose
+# Analyze a file from the command line
+npx contrarianai-context-inspector conversation.txt --domain --verbose
 
-# Or run the web dashboard
-npx context-inspector serve
+# Web dashboard
+npx contrarianai-context-inspector --serve
+```
+
+**MCP integration** — add to your `.mcp.json` (don't run `--mcp` manually):
+```json
+{
+  "mcpServers": {
+    "context-inspector": {
+      "command": "npx",
+      "args": ["contrarianai-context-inspector", "--mcp"]
+    }
+  }
+}
 ```
 
 <!-- Screenshot: Bell curve shifting from tight/right to flat/left with annotation -->
@@ -81,18 +93,20 @@ Every metric and visualization in Context Inspector was designed to surface this
 
 ### As an MCP Server (drop into any AI workflow)
 
-Add to your `.mcp.json` or `claude_desktop_config.json`:
+Add to your `.mcp.json` or `claude_desktop_config.json` (then restart your MCP client):
 
 ```json
 {
   "mcpServers": {
     "context-inspector": {
-      "command": "node",
-      "args": ["/path/to/context-inspector/mcp-server.js"]
+      "command": "npx",
+      "args": ["contrarianai-context-inspector", "--mcp"]
     }
   }
 }
 ```
+
+> **Note:** Don't run `--mcp` manually in your terminal — it's a stdio server that MCP clients manage. Use `--setup` or `--serve` for interactive use.
 
 **Available MCP tools:**
 
@@ -107,22 +121,22 @@ Add to your `.mcp.json` or `claude_desktop_config.json`:
 
 ```bash
 # Domain alignment (default) — reports σ, mean, histogram
-node cli.js conversation.txt
+npx contrarianai-context-inspector conversation.txt
 
 # User alignment
-node cli.js conversation.txt --user
+npx contrarianai-context-inspector conversation.txt --user
 
 # Custom chunk size
-node cli.js conversation.txt --chunk-size 300
+npx contrarianai-context-inspector conversation.txt --chunk-size 300
 
 # Full JSON output (pipe to jq, store, compare)
-node cli.js conversation.txt --json
+npx contrarianai-context-inspector conversation.txt --json
 
 # Per-chunk breakdown with visual bars
-node cli.js conversation.txt --verbose
+npx contrarianai-context-inspector conversation.txt --verbose
 
 # Read from stdin
-cat system-prompt.txt | node cli.js -
+cat system-prompt.txt | npx contrarianai-context-inspector -
 ```
 
 **Example output:**
@@ -159,7 +173,7 @@ cat system-prompt.txt | node cli.js -
 
 ```bash
 # Analysis tool (port 4000)
-node web-server.js
+npx contrarianai-context-inspector --serve
 
 # Simulation dashboard (port 4001)
 node sim/index.js

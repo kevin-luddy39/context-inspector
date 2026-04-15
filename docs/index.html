@@ -101,7 +101,7 @@ footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color
   <div class="nav-links">
     <a href="#demo">Demo</a>
     <a href="#paper">White Paper</a>
-    <a href="https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector">GitHub</a>
+    <a href="https://github.com/kevin-luddy39/context-inspector">GitHub</a>
     <a href="https://contrarianai-landing.onrender.com">contrarianAI</a>
   </div>
 </div>
@@ -114,14 +114,16 @@ footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color
   <p class="sub">Context Inspector monitors the statistical structure of AI context windows in real time. It detects domain alignment degradation — the leading indicator of output failure — before the output itself degrades.</p>
 
   <div class="cmd">
-    <span class="comment"># Drop into any MCP workflow</span><br>
-    git clone https://github.com/kevin-luddy39/contrarianAI.git<br>
-    cd contrarianAI/tools/context-inspector && npm install<br>
-    node mcp-server.js <span class="comment"># Add to .mcp.json</span>
+    <span class="comment"># AI-guided setup (easiest)</span><br>
+    npx contrarianai-context-inspector --setup<br><br>
+    <span class="comment"># Or analyze a file directly</span><br>
+    npx contrarianai-context-inspector your-file.txt --domain --verbose<br><br>
+    <span class="comment"># MCP integration — add to .mcp.json:</span><br>
+    { "command": "npx", "args": ["contrarianai-context-inspector", "--mcp"] }
   </div>
 
   <div class="cta-row">
-    <a href="https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector" class="btn btn-primary">View on GitHub</a>
+    <a href="https://github.com/kevin-luddy39/context-inspector" class="btn btn-primary">View on GitHub</a>
     <a href="#paper" class="btn btn-ghost">Read the White Paper</a>
   </div>
 </div>
@@ -230,17 +232,17 @@ footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color
   <div class="install-methods">
     <div class="install-method">
       <h4>MCP Server</h4>
-      <code>node mcp-server.js</code>
-      <p>Add to .mcp.json. 4 tools: analyze_context, get_bell_curve, get_chunks, compare_alignment. Drops into Claude Code, Cursor, or any MCP client.</p>
+      <code>npx contrarianai-context-inspector --setup</code>
+      <p>AI-guided wizard scans your project, suggests config, finds structural issues, generates .mcp.json. The easiest way to start.</p>
     </div>
     <div class="install-method">
       <h4>CLI</h4>
-      <code>node cli.js file.txt --verbose</code>
+      <code>npx contrarianai-context-inspector file.txt --verbose</code>
       <p>Reports &sigma;, mean, histogram, per-chunk breakdown. Pipe JSON output to jq or store for comparison. Reads from stdin.</p>
     </div>
     <div class="install-method">
       <h4>Web Dashboard</h4>
-      <code>node web-server.js</code>
+      <code>npx contrarianai-context-inspector --serve</code>
       <p>Interactive bell curve with rug plot, &plusmn;1&sigma;/2&sigma; bands, Gaussian fit. Concentrator toggle. Chunk size slider. Real-time analysis.</p>
     </div>
   </div>
@@ -253,7 +255,7 @@ footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color
   <h2>The output tells you when the system has failed.<br>The bell curve tells you when it's <em style="color:var(--accent)">about to</em>.</h2>
   <p class="sub">Open source. MCP-aware. Drops into any AI workflow.</p>
   <div class="cta-row">
-    <a href="https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector" class="btn btn-primary">Get Started on GitHub</a>
+    <a href="https://github.com/kevin-luddy39/context-inspector" class="btn btn-primary">Get Started on GitHub</a>
     <a href="whitepaper.md" class="btn btn-ghost">Read the White Paper</a>
   </div>
   <p style="margin-top:24px;color:var(--muted);font-size:0.85rem">Need help diagnosing your AI stack? <a href="https://contrarianai-landing.onrender.com">Request the AI Production Diagnostic</a> from contrarianAI.</p>

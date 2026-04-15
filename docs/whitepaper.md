@@ -135,9 +135,10 @@ Context Inspector is an open-source tool that implements the analysis described 
 - Extended NLP: readability scores, sentiment, entropy, cosine similarity, N-grams, POS tagging, NER, LDA topics
 
 **Integration points:**
-- **MCP server** (stdio transport): drops into any Claude Code or MCP-aware workflow as a tool
-- **CLI**: `node cli.js <file> --domain --verbose`
-- **Web dashboard**: real-time bell curve visualization with step scrubbing
+- **MCP server** (stdio transport): add to `.mcp.json` and restart your MCP client
+- **CLI**: `npx contrarianai-context-inspector <file> --domain --verbose`
+- **Setup wizard**: `npx contrarianai-context-inspector --setup` — AI-guided configuration
+- **Web dashboard**: `npx contrarianai-context-inspector --serve` — real-time bell curve visualization
 - **HTTP API**: `POST /api/analyze` for programmatic integration
 
 **Simulation framework:**
@@ -155,6 +156,8 @@ The gap between the structural signal and the output failure is the intervention
 
 ---
 
-*Context Inspector is open source at [github.com/kevin-luddy39/contrarianAI](https://github.com/kevin-luddy39/contrarianAI/tree/main/tools/context-inspector).*
+*Install: `npx contrarianai-context-inspector --setup`*
+
+*Source: [github.com/kevin-luddy39/context-inspector](https://github.com/kevin-luddy39/context-inspector) | npm: [contrarianai-context-inspector](https://www.npmjs.com/package/contrarianai-context-inspector)*
 
 *For the full AI Production Diagnostic: [contrarianai-landing.onrender.com](https://contrarianai-landing.onrender.com)*
