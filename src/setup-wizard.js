@@ -54,15 +54,29 @@ IMPORTANT: The package name is "contrarianai-context-inspector". All CLI command
   npx contrarianai-context-inspector --serve
 NEVER suggest "context-inspector" alone — it won't work. Always use "npx contrarianai-context-inspector".
 
-CRITICAL MCP RULES:
-- The --mcp flag starts a stdio-based MCP server. It is NOT meant to be run manually by the user in a terminal.
-- NEVER tell users to run "npx contrarianai-context-inspector --mcp" directly. It will block their terminal with no output (it's waiting for JSON-RPC on stdin).
-- Instead, tell users to ADD IT TO THEIR MCP CONFIG FILE. The MCP client (Claude Code, Cursor, etc.) manages the process.
-- For Claude Code / claude_desktop_config.json / .mcp.json:
-  { "mcpServers": { "context-inspector": { "command": "npx", "args": ["contrarianai-context-inspector", "--mcp"] } } }
-- After adding to config, RESTART the MCP client. The tools (analyze_context, get_bell_curve, get_chunks, compare_alignment) will appear automatically.
-- NEVER suggest --stdio flag — it doesn't exist. --mcp IS stdio mode.
-- If the user wants to TEST the analysis interactively, suggest --serve (web dashboard) or the CLI with a file.
+CRITICAL MCP RULES — READ THESE CAREFULLY:
+- The --mcp flag starts a stdio-based MCP server. It communicates via JSON-RPC on stdin/stdout.
+- NEVER EVER tell users to run "--mcp" or "--mcp --stdio" in their terminal. It WILL hang their terminal with no visible output. There is no --stdio flag.
+- The ONLY correct way to use --mcp is by adding it to an MCP config file. The MCP CLIENT starts and manages the process. The user never runs it directly.
+- Here is the ONLY correct MCP setup instruction:
+
+  Add this to your .mcp.json (for Claude Code) or claude_desktop_config.json (for Claude Desktop):
+  {
+    "mcpServers": {
+      "context-inspector": {
+        "command": "npx",
+        "args": ["contrarianai-context-inspector", "--mcp"]
+      }
+    }
+  }
+  Then restart your MCP client. The 4 tools will appear automatically.
+
+- If the user wants to TEST or EXPLORE interactively, suggest:
+  npx contrarianai-context-inspector --serve     (web dashboard at localhost:4000)
+  npx contrarianai-context-inspector file.txt     (CLI analysis)
+  npx contrarianai-context-inspector --setup      (this wizard)
+- NEVER suggest combining flags like --mcp --stdio, --mcp --domain, --setup --domain. These don't exist.
+- The --setup flag already starts THIS wizard. Don't tell users to run it again from within the wizard.
 
 Be concise and practical. Don't lecture — configure.
 
@@ -444,9 +458,75 @@ app.post('/api/setup/reset', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\nContext Inspector Setup Wizard`);
-  console.log(`Open http://localhost:${PORT} in your browser\n`);
+const PACKAGE_VERSION = require('../package.json').version;
+
+// Add version endpoint
+app.get('/api/setup/version', (req, res) => {
+  res.json({ version: PACKAGE_VERSION });
 });
+
+// Smart startup: check if port is already in use by a compatible instance
+async function startServer() {
+  const http = require('http');
+
+  // Check if something is already on this port
+  try {
+    const checkUrl = async (url) => new Promise((resolve) => {
+      const req = http.get(url, (res) => {
+        let data = '';
+        res.on('data', d => data += d);
+        res.on('end', () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
+      });
+      req.on('error', () => resolve(null));
+      req.setTimeout(3000, () => { req.destroy(); resolve(null); });
+    });
+
+    // Try both localhost and 127.0.0.1 (IPv6 vs IPv4)
+    const existing = await checkUrl(`http://localhost:${PORT}/api/setup/version`)
+      || await checkUrl(`http://127.0.0.1:${PORT}/api/setup/version`);
+
+    if (existing && existing.version) {
+      if (existing.version === PACKAGE_VERSION) {
+        console.log(`\nSetup Wizard v${PACKAGE_VERSION} already running on port ${PORT}`);
+        console.log(`Open http://localhost:${PORT} in your browser\n`);
+        return; // Already running, correct version — just exit cleanly
+      } else {
+        // Wrong version — kill it by asking it to shutdown, then start ours
+        console.log(`Found v${existing.version} on port ${PORT}, replacing with v${PACKAGE_VERSION}...`);
+        try {
+          await new Promise((resolve) => {
+            const req = http.request({ hostname: '127.0.0.1', port: PORT, path: '/api/setup/shutdown', method: 'POST' }, resolve);
+            req.on('error', resolve);
+            req.end();
+          });
+          await new Promise(r => setTimeout(r, 1500)); // wait for it to die
+        } catch { /* force start anyway */ }
+      }
+    }
+  } catch { /* nothing running, proceed */ }
+
+  // Start the server
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\nContext Inspector Setup Wizard v${PACKAGE_VERSION}`);
+    console.log(`Open http://localhost:${PORT} in your browser\n`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is in use by another process (not the setup wizard).`);
+      console.error(`Either stop that process or use: SETUP_PORT=4003 npx contrarianai-context-inspector --setup`);
+      process.exit(1);
+    }
+    throw err;
+  });
+}
+
+// Graceful shutdown endpoint (used by version replacement)
+app.post('/api/setup/shutdown', (req, res) => {
+  res.json({ ok: true });
+  setTimeout(() => process.exit(0), 500);
+});
+
+startServer();
 
 module.exports = app;
