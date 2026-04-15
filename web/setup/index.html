@@ -111,6 +111,7 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
   <div class="right-panel">
     <div class="right-tabs">
       <button class="active" onclick="showPanel('setup',this)">Setup</button>
+      <button onclick="showPanel('findings',this)">Findings</button>
       <button onclick="showPanel('config',this)">Config</button>
       <button onclick="showPanel('preview',this)">Preview</button>
     </div>
@@ -141,6 +142,39 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
             <button class="btn btn-ghost" onclick="quickChat('I\'m building a chatbot')">Chatbot</button>
             <button class="btn btn-ghost" onclick="quickChat('I\'m building an AI copilot')">Copilot</button>
             <button class="btn btn-ghost" onclick="quickChat('Analyze my project and suggest configuration')">Auto-Configure</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Findings Panel -->
+      <div class="panel" id="panel-findings">
+        <div id="findingsEmpty" style="color:var(--muted);text-align:center;padding:40px;font-size:0.85rem">
+          The AI will scan your project for structural issues.<br>Findings will appear here automatically.
+        </div>
+        <div id="findingsOutput" style="display:none">
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:0.7rem;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;">Health Score</div>
+            <div id="healthScore" style="font-size:3rem;font-weight:800;color:var(--accent);">—</div>
+            <div id="healthLabel" style="font-size:0.85rem;color:var(--muted)"></div>
+          </div>
+          <div id="issuesList"></div>
+          <div style="background:var(--s2);border:2px solid var(--accent);border-radius:10px;padding:20px;margin-top:20px;">
+            <h3 style="font-size:0.9rem;margin-bottom:8px;">Context Inspector monitors the symptoms</h3>
+            <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px;">The issues above will cause the bell curve to degrade over time. Context Inspector will show you <em>when</em> it happens. For the root cause fix list with prioritized, actionable changes:</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+              <a href="https://contrarianai-landing.onrender.com/assessment.html" target="_blank" class="btn btn-ghost" style="text-decoration:none;">Free Self-Assessment</a>
+              <a href="https://contrarianai-landing.onrender.com/#talk" target="_blank" class="btn btn-primary" style="text-decoration:none;">Talk to Kevin — Full Diagnostic</a>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px;">
+              <p style="color:var(--muted);font-size:0.8rem;margin-bottom:8px;">Get your config + findings report emailed:</p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <input type="text" id="leadName" placeholder="Name" style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 10px;font-size:0.8rem;">
+                <input type="email" id="leadEmail" placeholder="Work email" style="flex:2;min-width:150px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 10px;font-size:0.8rem;">
+                <input type="text" id="leadCompany" placeholder="Company" style="flex:1;min-width:100px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:6px 10px;font-size:0.8rem;">
+                <button class="btn btn-primary" onclick="captureLead()">Send Report</button>
+              </div>
+              <div id="captureStatus" style="font-size:0.8rem;margin-top:6px;display:none"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -293,9 +327,13 @@ async function sendMessage() {
 
     addMessage('assistant', data.reply);
 
+    if (data.findings) {
+      showFindings(data.findings);
+      showPanel('findings', document.querySelectorAll('.right-tabs button')[1]);
+    }
     if (data.config) {
       showConfig(data.config);
-      showPanel('config', document.querySelectorAll('.right-tabs button')[1]);
+      if (!data.findings) showPanel('config', document.querySelectorAll('.right-tabs button')[2]);
     }
   } catch (err) {
     typing.remove();
@@ -375,6 +413,58 @@ async function runPreview() {
 
   // Top terms
   document.getElementById('previewTerms').innerHTML = '<strong>Top domain terms:</strong> ' + data.summary.topDomainTerms.slice(0, 10).map(t => t.term).join(', ');
+}
+
+// ── Findings ───────────────────────────────────────
+function showFindings(findings) {
+  document.getElementById('findingsEmpty').style.display = 'none';
+  document.getElementById('findingsOutput').style.display = 'block';
+
+  const score = findings.healthScore ?? '—';
+  const scoreEl = document.getElementById('healthScore');
+  scoreEl.textContent = score;
+  scoreEl.style.color = score >= 70 ? 'var(--green)' : score >= 40 ? 'var(--accent)' : 'var(--red)';
+
+  const label = score >= 80 ? 'Healthy — minor issues only'
+    : score >= 60 ? 'Notable gaps — monitoring recommended'
+    : score >= 40 ? 'Significant risk — structural issues present'
+    : 'Critical — context rot likely in production';
+  document.getElementById('healthLabel').textContent = label;
+
+  const list = document.getElementById('issuesList');
+  const sevColors = { high: 'var(--red)', medium: 'var(--accent)', low: 'var(--blue)' };
+  list.innerHTML = (findings.issues || []).map(issue => `
+    <div style="background:var(--bg);border:1px solid var(--border);border-left:4px solid ${sevColors[issue.severity] || 'var(--muted)'};border-radius:6px;padding:12px 16px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <strong style="font-size:0.9rem;">${issue.title}</strong>
+        <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:3px;font-weight:700;background:${sevColors[issue.severity]||'var(--muted)'}20;color:${sevColors[issue.severity]||'var(--muted)'}">${issue.severity}</span>
+      </div>
+      <div style="color:var(--muted);font-size:0.8rem;">${issue.detail}</div>
+      ${issue.file ? '<div style="color:var(--muted);font-size:0.7rem;font-family:monospace;margin-top:4px;">' + issue.file + '</div>' : ''}
+    </div>
+  `).join('');
+}
+
+async function captureLead() {
+  const email = document.getElementById('leadEmail').value.trim();
+  const name = document.getElementById('leadName').value.trim();
+  const company = document.getElementById('leadCompany').value.trim();
+  if (!email) { document.getElementById('captureStatus').textContent = 'Email required'; document.getElementById('captureStatus').style.display = 'block'; return; }
+
+  const status = document.getElementById('captureStatus');
+  status.textContent = 'Sending...';
+  status.style.display = 'block';
+  status.style.color = 'var(--muted)';
+
+  try {
+    const r = await fetch('/api/setup/capture', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email, name, company}) });
+    const data = await r.json();
+    status.textContent = 'Sent! Check your email.';
+    status.style.color = 'var(--green)';
+  } catch (err) {
+    status.textContent = 'Error: ' + err.message;
+    status.style.color = 'var(--red)';
+  }
 }
 </script>
 

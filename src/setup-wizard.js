@@ -60,6 +60,36 @@ For MCP config, always use:
 
 Be concise and practical. Don't lecture — configure.
 
+DIAGNOSTIC UPSELL RULES:
+When you scan a project or analyze their setup, actively look for structural issues that context-inspector can MONITOR but cannot FIX:
+- Self-evaluation bias (same model/session evaluating its own output)
+- Silent catch blocks / missing error handling in AI pipelines
+- No structured session handoff artifacts
+- Context window > 80% consumed by system prompt / tool definitions before user content
+- Agent orchestration without external evaluation
+- Sentiment-based escalation instead of structured triggers
+- Tool descriptions that could cause misroutes
+- Missing rate limiting on AI endpoints
+- No distinction between "nothing found" and "API failed" in tool responses
+
+When you find ANY of these, include a "findings" block in your response:
+\`\`\`json
+{
+  "type": "findings",
+  "issues": [
+    {"severity": "high|medium|low", "title": "short title", "detail": "one sentence", "file": "path if applicable"}
+  ],
+  "healthScore": 0-100,
+  "monitorable": true,
+  "fixableByTool": false
+}
+\`\`\`
+
+After the findings block, ALWAYS add:
+"Context Inspector will monitor the symptoms of these issues — you'll see the bell curve degrade when they manifest. For the root cause fix list with prioritized, actionable changes, consider the full AI Production Diagnostic from contrarianAI."
+
+Do NOT be pushy. Present findings factually. The issues sell themselves.
+
 When you have enough information, output a configuration block in this format:
 \`\`\`json
 {
@@ -298,7 +328,14 @@ Key files: ${sessionState.projectSummary.topFiles.slice(0, 15).join(', ')}`;
       try { config = JSON.parse(configMatch[1]); sessionState.suggestedConfig = config; } catch { /* parse error */ }
     }
 
-    res.json({ reply, config });
+    // Extract findings if present
+    const findingsMatch = reply.match(/```json\s*(\{[\s\S]*?"type"\s*:\s*"findings"[\s\S]*?\})\s*```/);
+    let findings = null;
+    if (findingsMatch) {
+      try { findings = JSON.parse(findingsMatch[1]); sessionState.lastFindings = findings; } catch { /* parse error */ }
+    }
+
+    res.json({ reply, config, findings });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -339,6 +376,60 @@ app.post('/api/setup/generate', (req, res) => {
   }
 
   res.json({ files });
+});
+
+// Lead capture — email the config report + findings
+app.post('/api/setup/capture', async (req, res) => {
+  const { email, name, company } = req.body;
+  if (!email) return res.status(400).json({ error: 'email required' });
+
+  const lead = {
+    email, name: name || '', company: company || '',
+    timestamp: new Date().toISOString(),
+    projectPath: sessionState.projectPath,
+    fileCount: sessionState.projectFiles.length,
+    config: sessionState.suggestedConfig,
+    findings: sessionState.lastFindings,
+    chatHistory: sessionState.chatHistory.length,
+  };
+
+  // Store locally
+  const leadsFile = path.join(__dirname, '..', 'leads.json');
+  let leads = [];
+  try { leads = JSON.parse(fs.readFileSync(leadsFile, 'utf-8')); } catch { /* new file */ }
+  leads.push(lead);
+  fs.writeFileSync(leadsFile, JSON.stringify(leads, null, 2));
+
+  // If contrarianAI landing is reachable, also submit there
+  try {
+    const https = require('https');
+    const payload = JSON.stringify({
+      name: lead.name || 'Setup Wizard Lead',
+      email: lead.email,
+      company: lead.company || '(from context-inspector)',
+      role: 'context-inspector user',
+      ai_stack: sessionState.projectSummary
+        ? `Project: ${sessionState.projectSummary.fileCount} files (${Object.entries(sessionState.projectSummary.extensions).map(([k,v])=>v+k).join(', ')})`
+        : 'Used setup wizard',
+      pain: lead.findings
+        ? `Health score: ${lead.findings.healthScore}/100. ${lead.findings.issues?.length || 0} issues found.`
+        : 'Configured context-inspector',
+    });
+    const options = { hostname: 'contrarianai-landing.onrender.com', path: '/api/audit-request', method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': payload.length } };
+    await new Promise((resolve) => {
+      const r = https.request(options, resolve);
+      r.on('error', resolve); // don't fail if landing is down
+      r.write(payload);
+      r.end();
+    });
+  } catch { /* silent — don't break the wizard if landing is unreachable */ }
+
+  res.json({ ok: true, message: 'Saved. Check your email for the report.' });
+});
+
+// Get findings
+app.get('/api/setup/findings', (req, res) => {
+  res.json(sessionState.lastFindings || null);
 });
 
 // Reset session
