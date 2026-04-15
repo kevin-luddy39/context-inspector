@@ -305,7 +305,18 @@ async function scanProject() {
   fileList.style.display = 'block';
   fileList.innerHTML = data.topFiles.map(f => '<div onclick="quickChat(\'Read file ' + f + ' and analyze it\')">' + f + '</div>').join('');
 
-  addMessage('system', 'Found ' + data.fileCount + ' files: ' + Object.entries(data.extensions).map(([k,v])=>v+k).join(', '));
+  let scanMsg = 'Found ' + data.fileCount + ' files: ' + Object.entries(data.extensions).map(([k,v])=>v+k).join(', ');
+  if (data.contextFilesFound > 0) {
+    scanMsg += '. Detected ' + data.contextFilesFound + ' context-related files (' + data.promptFilesFound + ' prompt files, ' + data.codeWithPrompts + ' code files with prompts).';
+  }
+  addMessage('system', scanMsg);
+
+  // Auto-populate Preview tab with extracted samples
+  if (data.hasAutoDomain || data.hasAutoContext) {
+    loadSamples();
+    addMessage('system', 'Preview tab auto-populated with extracted domain reference and sample context from your project.');
+  }
+
   quickChat('I just scanned my project at ' + dir + '. Analyze the structure and suggest configuration for context-inspector.');
 }
 
@@ -437,6 +448,22 @@ async function runPreview() {
 
   // Top terms
   document.getElementById('previewTerms').innerHTML = '<strong>Top domain terms:</strong> ' + data.summary.topDomainTerms.slice(0, 10).map(t => t.term).join(', ');
+}
+
+// ── Load auto-extracted samples into Preview tab ───
+async function loadSamples() {
+  try {
+    const r = await fetch('/api/setup/samples');
+    const data = await r.json();
+    if (data.domainReference) {
+      document.getElementById('domainRefText').value = data.domainReference;
+      document.getElementById('domainStatus').textContent = 'Auto-populated from project scan';
+      document.getElementById('domainStatus').style.color = 'var(--green)';
+    }
+    if (data.contextSample) {
+      document.getElementById('previewText').value = data.contextSample;
+    }
+  } catch { /* silent */ }
 }
 
 // ── Findings ───────────────────────────────────────

@@ -219,6 +219,82 @@ app.post('/api/setup/scan', (req, res) => {
   sessionState.projectPath = resolved;
   sessionState.projectFiles = files;
 
+  // ── Extract context samples from project ────────────────
+  // Look for files that likely contain AI context material
+  const CONTEXT_PATTERNS = [
+    /system.?prompt/i, /prompt.?template/i, /system.?message/i,
+    /instructions/i, /persona/i, /\.prompt\b/i,
+  ];
+  const CONTEXT_FILENAMES = new Set([
+    'system_prompt.txt', 'system_prompt.md', 'prompt.txt', 'prompt.md',
+    'instructions.txt', 'instructions.md', 'persona.txt', 'persona.md',
+    'CLAUDE.md', '.cursorrules', '.clinerules',
+  ]);
+  const CONTEXT_EXTENSIONS = new Set(['.prompt', '.system']);
+  const CODE_WITH_PROMPTS = [
+    /system.*=.*["`'].*["`']/s, /role.*system/i, /SystemMessage/i,
+    /system_prompt/i, /SYSTEM_PROMPT/i, /instructions\s*[:=]/i,
+    /createChatCompletion|messages\.create|ChatCompletion/i,
+    /\.chat\(|\.complete\(|\.generate\(/i,
+  ];
+
+  const domainSamples = [];
+  const contextSamples = [];
+
+  for (const file of files) {
+    if (domainSamples.length >= 5 && contextSamples.length >= 3) break;
+    try {
+      const content = fs.readFileSync(file.path, 'utf-8');
+      const isPromptFile = CONTEXT_FILENAMES.has(path.basename(file.relative))
+        || CONTEXT_EXTENSIONS.has(file.ext)
+        || CONTEXT_PATTERNS.some(p => p.test(file.relative));
+      const hasPromptCode = CODE_WITH_PROMPTS.some(p => p.test(content));
+
+      if (isPromptFile) {
+        // Direct prompt/instruction files → domain reference + context sample
+        const sample = content.slice(0, 5000);
+        domainSamples.push({ file: file.relative, text: sample, type: 'prompt-file' });
+        contextSamples.push({ file: file.relative, text: sample, type: 'prompt-file' });
+      } else if (hasPromptCode && domainSamples.length < 5) {
+        // Code files with embedded prompts → extract string literals near prompt patterns
+        const lines = content.split('\n');
+        const relevantLines = [];
+        lines.forEach((line, i) => {
+          if (CODE_WITH_PROMPTS.some(p => p.test(line))) {
+            // Grab surrounding context (5 lines before, 10 after)
+            const start = Math.max(0, i - 5);
+            const end = Math.min(lines.length, i + 11);
+            relevantLines.push(...lines.slice(start, end));
+          }
+        });
+        if (relevantLines.length > 0) {
+          const extract = relevantLines.join('\n').slice(0, 3000);
+          domainSamples.push({ file: file.relative, text: extract, type: 'code-with-prompts' });
+        }
+      }
+    } catch { /* skip unreadable */ }
+  }
+
+  // Also check for MCP config, .env, tool definitions
+  const mcpFiles = files.filter(f => f.relative === '.mcp.json' || f.relative === 'mcp.json');
+  const envFiles = files.filter(f => f.relative === '.env.example');
+  for (const f of [...mcpFiles, ...envFiles]) {
+    try {
+      contextSamples.push({ file: f.relative, text: fs.readFileSync(f.path, 'utf-8').slice(0, 2000), type: 'config' });
+    } catch { /* skip */ }
+  }
+
+  // Build auto-populated domain reference and sample context
+  const autoDomainRef = domainSamples.length > 0
+    ? domainSamples.map(s => `[${s.file}]\n${s.text}`).join('\n\n')
+    : null;
+  const autoContextSample = contextSamples.length > 0
+    ? contextSamples.map(s => `[${s.file}]\n${s.text}`).join('\n\n')
+    : null;
+
+  sessionState.autoDomainRef = autoDomainRef;
+  sessionState.autoContextSample = autoContextSample;
+
   // Build a summary for the AI
   const extCounts = {};
   files.forEach(f => { extCounts[f.ext] = (extCounts[f.ext] || 0) + 1; });
@@ -228,6 +304,11 @@ app.post('/api/setup/scan', (req, res) => {
     fileCount: files.length,
     extensions: extCounts,
     topFiles: files.slice(0, 30).map(f => f.relative),
+    contextFilesFound: domainSamples.length,
+    promptFilesFound: domainSamples.filter(s => s.type === 'prompt-file').length,
+    codeWithPrompts: domainSamples.filter(s => s.type === 'code-with-prompts').length,
+    hasAutoDomain: !!autoDomainRef,
+    hasAutoContext: !!autoContextSample,
   };
 
   sessionState.projectSummary = summary;
@@ -257,6 +338,15 @@ app.post('/api/setup/read-file', (req, res) => {
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
+});
+
+// Get auto-extracted context samples from the scanned project
+app.get('/api/setup/samples', (req, res) => {
+  res.json({
+    domainReference: sessionState.autoDomainRef || null,
+    contextSample: sessionState.autoContextSample || null,
+    hasProject: !!sessionState.projectPath,
+  });
 });
 
 // Analyze text with current settings
