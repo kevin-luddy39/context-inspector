@@ -330,7 +330,7 @@ function showConfig(config) {
   const mcpJson = JSON.stringify({ mcpServers: { 'context-inspector': { command: 'npx', args: ['contrarianai-context-inspector', '--mcp'] } } }, null, 2);
   document.getElementById('mcpConfig').textContent = mcpJson;
 
-  const cli = `npx contrarianai-context-inspector \\\n  --${config.concentrator || 'domain'} \\\n  --chunk-size ${config.chunkSize || 500} \\\n  --verbose your-file.txt`;
+  const cli = `npx contrarianai-context-inspector your-file.txt \\\n  --${config.concentrator || 'domain'} \\\n  --chunk-size ${config.chunkSize || 500} \\\n  --verbose`;
   document.getElementById('cliConfig').textContent = cli;
   document.getElementById('fullConfig').textContent = JSON.stringify(config, null, 2);
 }

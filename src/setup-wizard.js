@@ -48,6 +48,16 @@ Your job:
 - Generate ready-to-use config files (.mcp.json, CLI commands)
 - Show them what the analysis looks like on their actual content
 
+IMPORTANT: The package name is "contrarianai-context-inspector". All CLI commands MUST use npx:
+  npx contrarianai-context-inspector <file> --domain --verbose
+  npx contrarianai-context-inspector --mcp
+  npx contrarianai-context-inspector --setup
+  npx contrarianai-context-inspector --serve
+NEVER suggest "context-inspector" alone — it won't work. Always use "npx contrarianai-context-inspector".
+
+For MCP config, always use:
+  { "command": "npx", "args": ["contrarianai-context-inspector", "--mcp"] }
+
 Be concise and practical. Don't lecture — configure.
 
 When you have enough information, output a configuration block in this format:
@@ -116,7 +126,13 @@ app.post('/api/setup/scan', (req, res) => {
   const { dirPath } = req.body;
   if (!dirPath) return res.status(400).json({ error: 'dirPath required' });
 
-  const resolved = path.resolve(dirPath);
+  // Handle Windows paths from browser on WSL
+  let resolved = dirPath;
+  if (/^[A-Z]:\\/i.test(dirPath)) {
+    // Convert Windows path to WSL: C:\Users\foo → /mnt/c/Users/foo
+    resolved = '/mnt/' + dirPath[0].toLowerCase() + dirPath.slice(2).replace(/\\/g, '/');
+  }
+  resolved = path.resolve(resolved);
   if (!fs.existsSync(resolved)) return res.status(400).json({ error: 'Directory not found: ' + resolved });
 
   const files = [];
@@ -172,8 +188,12 @@ app.post('/api/setup/read-file', (req, res) => {
   const { filePath } = req.body;
   if (!filePath) return res.status(400).json({ error: 'filePath required' });
 
-  // Security: only allow reading within the scanned project
-  const resolved = path.resolve(filePath);
+  // Handle Windows paths from browser on WSL
+  let resolved = filePath;
+  if (/^[A-Z]:\\/i.test(filePath)) {
+    resolved = '/mnt/' + filePath[0].toLowerCase() + filePath.slice(2).replace(/\\/g, '/');
+  }
+  resolved = path.resolve(resolved);
   if (sessionState.projectPath && !resolved.startsWith(sessionState.projectPath)) {
     return res.status(403).json({ error: 'File outside project scope' });
   }
@@ -310,6 +330,8 @@ app.post('/api/setup/generate', (req, res) => {
 
   // CLI command
   files['run.sh'] = `#!/bin/bash\n# Context Inspector — generated configuration\nnpx contrarianai-context-inspector \\\n  --${config.concentrator || 'domain'} \\\n  --chunk-size ${config.chunkSize || 500} \\\n  --verbose \\\n  "$@"`;
+
+  files['run.ps1'] = `# Context Inspector — generated configuration (PowerShell)\nnpx contrarianai-context-inspector \`\n  --${config.concentrator || 'domain'} \`\n  --chunk-size ${config.chunkSize || 500} \`\n  --verbose \`\n  $args`;
 
   // Domain reference file (if specified as text)
   if (config.domainReference && !config.domainReference.startsWith('/') && !config.domainReference.startsWith('.')) {
