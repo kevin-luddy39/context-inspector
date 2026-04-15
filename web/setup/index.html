@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Inspector — Setup Wizard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0a0a;--surface:#141414;--s2:#1a1a1a;--border:#262626;--text:#e5e5e5;--muted:#a3a3a3;--accent:#f97316;--blue:#3b82f6;--green:#22c55e;--red:#ef4444}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
+.status{display:flex;gap:12px;align-items:center;font-size:0.75rem;color:var(--muted)}
+.status .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.on{background:var(--green)} .dot.off{background:var(--red)}
+
+/* Layout */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* Left: Chat */
+.chat-panel{width:55%;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:85%;padding:12px 16px;border-radius:12px;font-size:0.9rem;line-height:1.5}
+.msg.user{align-self:flex-end;background:var(--accent);color:#000;border-bottom-right-radius:4px}
+.msg.assistant{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg pre{background:var(--bg);padding:8px;border-radius:4px;font-size:0.8rem;overflow-x:auto;margin:8px 0;white-space:pre-wrap}
+.msg code{background:var(--bg);padding:2px 6px;border-radius:3px;font-size:0.8rem}
+.msg.system{align-self:center;background:var(--s2);border:1px dashed var(--border);color:var(--muted);font-size:0.8rem;max-width:90%}
+.typing{align-self:flex-start;color:var(--muted);font-size:0.8rem;padding:8px 16px}
+
+.chat-input{border-top:1px solid var(--border);padding:12px;display:flex;gap:8px;background:var(--surface)}
+.chat-input textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-family:inherit;font-size:0.9rem;resize:none;min-height:44px;max-height:120px}
+.chat-input textarea:focus{outline:none;border-color:var(--accent)}
+.chat-input textarea::placeholder{color:var(--muted)}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-weight:700;font-size:0.8rem;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#000} .btn-primary:hover{background:#fb923c}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)} .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* Right: Config & Preview */
+.right-panel{width:45%;display:flex;flex-direction:column;overflow:hidden}
+.right-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.right-tabs button{flex:1;padding:10px;background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;border-bottom:2px solid transparent}
+.right-tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.right-content{flex:1;overflow-y:auto;padding:16px}
+.panel{display:none} .panel.active{display:block}
+
+/* Setup panel */
+.setup-section{margin-bottom:20px}
+.setup-section h3{font-size:0.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.key-input{display:flex;gap:8px;margin-bottom:12px}
+.key-input input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 12px;font-family:monospace;font-size:0.8rem}
+.key-input input:focus{outline:none;border-color:var(--accent)}
+.dir-input{display:flex;gap:8px}
+.dir-input input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 12px;font-size:0.85rem}
+.file-list{max-height:200px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:8px;font-size:0.75rem;color:var(--muted);font-family:monospace}
+.file-list div{padding:2px 0;cursor:pointer} .file-list div:hover{color:var(--accent)}
+
+/* Config panel */
+.config-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:monospace;font-size:0.8rem;white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-bottom:12px}
+.config-block.mcp{border-color:var(--accent)}
+.config-block.cli{border-color:var(--green)}
+
+/* Preview panel */
+.preview-controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.preview-controls select,.preview-controls input[type=range]{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:0.8rem}
+.preview-controls input[type=range]{width:120px;accent-color:var(--accent)}
+.preview-text{background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-bottom:12px}
+.preview-text textarea{width:100%;min-height:100px;background:transparent;border:none;color:var(--text);padding:10px;font-size:0.85rem;font-family:inherit;resize:vertical}
+.preview-text textarea:focus{outline:none}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px}
+.chart-box h4{font-size:0.7rem;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.chart-box canvas{width:100%!important;height:200px!important}
+.stats-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-mini{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center}
+.stat-mini .lbl{font-size:0.6rem;color:var(--muted);text-transform:uppercase} .stat-mini .val{font-size:1.1rem;font-weight:700;margin-top:2px}
+
+@media(max-width:900px){.layout{flex-direction:column}.chat-panel,.right-panel{width:100%;height:50%}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Context <span>Inspector</span> Setup Wizard</h1>
+  <div class="status">
+    <span>API: <span class="dot" id="apiDot"></span></span>
+    <span>Project: <span id="projectStatus">none</span></span>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Chat Panel -->
+  <div class="chat-panel">
+    <div class="chat-messages" id="messages">
+      <div class="msg system">
+        Welcome! I'll help you configure Context Inspector for your AI workflow.<br><br>
+        First: paste your <strong>Anthropic API key</strong> in the Setup tab on the right (needed for this wizard only — not stored).<br><br>
+        Then tell me: <strong>What AI system are you building?</strong> (RAG pipeline, agents, chatbot, copilot, etc.)
+      </div>
+    </div>
+    <div class="chat-input">
+      <textarea id="chatInput" placeholder="Describe your AI workflow, ask questions, or say 'scan my project'..." rows="1"></textarea>
+      <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="right-tabs">
+      <button class="active" onclick="showPanel('setup',this)">Setup</button>
+      <button onclick="showPanel('config',this)">Config</button>
+      <button onclick="showPanel('preview',this)">Preview</button>
+    </div>
+    <div class="right-content">
+
+      <!-- Setup Panel -->
+      <div class="panel active" id="panel-setup">
+        <div class="setup-section">
+          <h3>Anthropic API Key</h3>
+          <div class="key-input">
+            <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+            <button class="btn btn-ghost" onclick="setApiKey()">Set</button>
+          </div>
+        </div>
+        <div class="setup-section">
+          <h3>Project Directory (optional — grants file access)</h3>
+          <div class="dir-input">
+            <input type="text" id="dirInput" placeholder="/path/to/your/project">
+            <button class="btn btn-ghost" onclick="scanProject()">Scan</button>
+          </div>
+          <div class="file-list" id="fileList" style="display:none"></div>
+        </div>
+        <div class="setup-section">
+          <h3>Quick Actions</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="quickChat('I\'m building a RAG pipeline')">RAG Pipeline</button>
+            <button class="btn btn-ghost" onclick="quickChat('I\'m building a multi-agent system')">Multi-Agent</button>
+            <button class="btn btn-ghost" onclick="quickChat('I\'m building a chatbot')">Chatbot</button>
+            <button class="btn btn-ghost" onclick="quickChat('I\'m building an AI copilot')">Copilot</button>
+            <button class="btn btn-ghost" onclick="quickChat('Analyze my project and suggest configuration')">Auto-Configure</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Config Panel -->
+      <div class="panel" id="panel-config">
+        <div id="configEmpty" style="color:var(--muted);text-align:center;padding:40px;font-size:0.85rem">
+          Chat with the wizard to generate a configuration. It will appear here when ready.
+        </div>
+        <div id="configOutput" style="display:none">
+          <h3 style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-bottom:8px">MCP Configuration (.mcp.json)</h3>
+          <div class="config-block mcp" id="mcpConfig"></div>
+          <button class="btn btn-ghost" onclick="copyConfig('mcpConfig')" style="margin-bottom:16px">Copy</button>
+
+          <h3 style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-bottom:8px">CLI Command</h3>
+          <div class="config-block cli" id="cliConfig"></div>
+          <button class="btn btn-ghost" onclick="copyConfig('cliConfig')" style="margin-bottom:16px">Copy</button>
+
+          <h3 style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Full Configuration</h3>
+          <div class="config-block" id="fullConfig"></div>
+          <button class="btn btn-ghost" onclick="copyConfig('fullConfig')">Copy</button>
+        </div>
+      </div>
+
+      <!-- Preview Panel -->
+      <div class="panel" id="panel-preview">
+        <div class="preview-controls">
+          <select id="prevConcentrator">
+            <option value="domain">Domain</option>
+            <option value="user">User</option>
+          </select>
+          <label style="font-size:0.75rem;color:var(--muted)">Chunk:
+            <input type="range" id="prevChunkSize" min="100" max="2000" step="50" value="500">
+            <span id="prevChunkVal">500</span>
+          </label>
+          <button class="btn btn-primary" onclick="runPreview()">Analyze</button>
+        </div>
+        <div class="preview-text">
+          <textarea id="previewText" placeholder="Paste sample text from your AI context here to see live analysis..."></textarea>
+        </div>
+        <div class="stats-mini" id="previewStats"></div>
+        <div class="chart-box">
+          <h4>Domain Alignment Bell Curve</h4>
+          <canvas id="previewBell"></canvas>
+        </div>
+        <div id="previewTerms" style="font-size:0.75rem;color:var(--muted)"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const messagesEl = document.getElementById('messages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+let bellChart = null;
+
+// Auto-resize textarea
+chatInput.addEventListener('input', () => {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+});
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById('prevChunkSize').addEventListener('input', (e) => {
+  document.getElementById('prevChunkVal').textContent = e.target.value;
+});
+
+// Check status on load
+(async () => {
+  const r = await fetch('/api/setup/status');
+  const s = await r.json();
+  document.getElementById('apiDot').className = 'dot ' + (s.hasApiKey ? 'on' : 'off');
+  if (s.projectPath) document.getElementById('projectStatus').textContent = s.projectPath;
+})();
+
+// Panel switching
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.right-tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// Set API key
+async function setApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  await fetch('/api/setup/key', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key}) });
+  document.getElementById('apiDot').className = 'dot on';
+  addMessage('system', 'API key set. Ready to chat!');
+}
+
+// Scan project
+async function scanProject() {
+  const dir = document.getElementById('dirInput').value.trim();
+  if (!dir) return;
+  addMessage('system', 'Scanning ' + dir + '...');
+  const r = await fetch('/api/setup/scan', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({dirPath: dir}) });
+  const data = await r.json();
+  if (data.error) { addMessage('system', 'Error: ' + data.error); return; }
+
+  document.getElementById('projectStatus').textContent = data.path + ' (' + data.fileCount + ' files)';
+  const fileList = document.getElementById('fileList');
+  fileList.style.display = 'block';
+  fileList.innerHTML = data.topFiles.map(f => '<div onclick="quickChat(\'Read file ' + f + ' and analyze it\')">' + f + '</div>').join('');
+
+  addMessage('system', 'Found ' + data.fileCount + ' files: ' + Object.entries(data.extensions).map(([k,v])=>v+k).join(', '));
+  quickChat('I just scanned my project at ' + dir + '. Analyze the structure and suggest configuration for context-inspector.');
+}
+
+// Chat
+async function sendMessage() {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+
+  addMessage('user', msg);
+  sendBtn.disabled = true;
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.textContent = 'Thinking...';
+  messagesEl.appendChild(typing);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  try {
+    const r = await fetch('/api/setup/chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({message: msg}) });
+    const data = await r.json();
+    typing.remove();
+
+    if (data.error) { addMessage('system', 'Error: ' + data.error); return; }
+
+    addMessage('assistant', data.reply);
+
+    if (data.config) {
+      showConfig(data.config);
+      showPanel('config', document.querySelectorAll('.right-tabs button')[1]);
+    }
+  } catch (err) {
+    typing.remove();
+    addMessage('system', 'Network error: ' + err.message);
+  }
+  sendBtn.disabled = false;
+}
+
+function quickChat(msg) {
+  chatInput.value = msg;
+  sendMessage();
+}
+
+function addMessage(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  // Simple markdown-ish rendering
+  div.innerHTML = text
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre>$2</pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// Config display
+function showConfig(config) {
+  document.getElementById('configEmpty').style.display = 'none';
+  document.getElementById('configOutput').style.display = 'block';
+
+  const mcpJson = JSON.stringify({ mcpServers: { 'context-inspector': { command: 'npx', args: ['contrarianai-context-inspector', '--mcp'] } } }, null, 2);
+  document.getElementById('mcpConfig').textContent = mcpJson;
+
+  const cli = `npx contrarianai-context-inspector \\\n  --${config.concentrator || 'domain'} \\\n  --chunk-size ${config.chunkSize || 500} \\\n  --verbose your-file.txt`;
+  document.getElementById('cliConfig').textContent = cli;
+  document.getElementById('fullConfig').textContent = JSON.stringify(config, null, 2);
+}
+
+function copyConfig(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text);
+}
+
+// Preview analysis
+async function runPreview() {
+  const text = document.getElementById('previewText').value;
+  if (!text) return;
+  const chunkSize = parseInt(document.getElementById('prevChunkSize').value);
+
+  const r = await fetch('/api/setup/analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text, chunkSize}) });
+  const data = await r.json();
+  const conc = document.getElementById('prevConcentrator').value;
+  const side = conc === 'user' ? data.user : data.domain;
+
+  // Stats
+  document.getElementById('previewStats').innerHTML = `
+    <div class="stat-mini"><div class="lbl">Mean</div><div class="val" style="color:var(--accent)">${side.stats.mean.toFixed(3)}</div></div>
+    <div class="stat-mini"><div class="lbl">Std Dev</div><div class="val" style="color:var(--blue)">${side.stats.stdDev.toFixed(3)}</div></div>
+    <div class="stat-mini"><div class="lbl">Chunks</div><div class="val">${side.stats.count}</div></div>
+    <div class="stat-mini"><div class="lbl">Spread</div><div class="val" style="font-size:0.75rem;color:var(--muted)">${side.interpretation.spread}</div></div>
+  `;
+
+  // Bell curve
+  if (bellChart) bellChart.destroy();
+  const labels = side.stats.binEdges.map(e => e.toFixed(2));
+  bellChart = new Chart(document.getElementById('previewBell'), {
+    type: 'bar', data: { labels, datasets: [
+      { label: 'Observed', data: side.stats.histogram, backgroundColor: '#f9731666', borderColor: '#f97316', borderWidth: 1, barPercentage: 1, categoryPercentage: 1 },
+      { label: 'Gaussian fit', data: side.stats.gaussianFit, type: 'line', borderColor: '#22c55e', borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, scales: {
+      x: { grid:{color:'#262626'}, ticks:{color:'#a3a3a3',maxTicksLimit:10} },
+      y: { grid:{color:'#262626'}, ticks:{color:'#a3a3a3'}, beginAtZero: true }
+    }, plugins: { legend:{labels:{color:'#a3a3a3',font:{size:10}}} } }
+  });
+
+  // Top terms
+  document.getElementById('previewTerms').innerHTML = '<strong>Top domain terms:</strong> ' + data.summary.topDomainTerms.slice(0, 10).map(t => t.term).join(', ');
+}
+</script>
+
+</body>
+</html>

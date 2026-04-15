@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 function parseArgs(argv) {
-  const args = { file: null, concentrator: 'domain', chunkSize: 500, json: false, verbose: false, mcp: false, serve: false };
+  const args = { file: null, concentrator: 'domain', chunkSize: 500, json: false, verbose: false, mcp: false, serve: false, setup: false };
   let i = 2;
   while (i < argv.length) {
     const arg = argv[i];
@@ -28,6 +28,7 @@ function parseArgs(argv) {
     else if (arg === '--verbose' || arg === '-v') args.verbose = true;
     else if (arg === '--mcp') args.mcp = true;
     else if (arg === '--serve') args.serve = true;
+    else if (arg === '--setup') args.setup = true;
     else if (arg === '--help' || arg === '-h') { printHelp(); process.exit(0); }
     else if (!args.file) args.file = arg;
     i++;
@@ -44,6 +45,7 @@ Usage:
   context-inspector - [options]          Read from stdin
   context-inspector --mcp               Start MCP server (stdio transport)
   context-inspector --serve              Start web dashboard (port 4000)
+  context-inspector --setup              AI-guided setup wizard (port 4002)
 
 Analysis options:
   --domain           Analyze domain alignment (default)
@@ -84,6 +86,12 @@ function main() {
   // Web dashboard mode
   if (args.serve) {
     require(path.join(__dirname, '..', 'src', 'server.js'));
+    return;
+  }
+
+  // Setup wizard mode
+  if (args.setup) {
+    require(path.join(__dirname, '..', 'src', 'setup-wizard.js'));
     return;
   }
 
