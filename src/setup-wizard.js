@@ -140,7 +140,7 @@ app.post('/api/setup/key', async (req, res) => {
   try {
     const client = new Anthropic({ apiKey: key });
     await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 10,
       messages: [{ role: 'user', content: 'hi' }],
     });
@@ -321,7 +321,7 @@ Key files: ${sessionState.projectSummary.topFiles.slice(0, 15).join(', ')}`;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         response = await client.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 2048,
           temperature: 0.3,
           system: SYSTEM_PROMPT + contextInfo,
