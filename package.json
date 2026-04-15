@@ -1,5 +1,5 @@
 {
-  "name": "context-inspector",
+  "name": "contrarianai-context-inspector",
   "version": "0.1.0",
   "description": "Statistical early warning for AI context window degradation. MCP-aware drop-in that monitors domain alignment, detects context rot, and surfaces the bell curve signal before output fails.",
   "keywords": [
