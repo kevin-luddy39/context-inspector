@@ -30,6 +30,12 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
 .msg code{background:var(--bg);padding:2px 6px;border-radius:3px;font-size:0.8rem}
 .msg.system{align-self:center;background:var(--s2);border:1px dashed var(--border);color:var(--muted);font-size:0.8rem;max-width:90%}
 .typing{align-self:flex-start;color:var(--muted);font-size:0.8rem;padding:8px 16px}
+.thinking-bar{display:none;position:fixed;top:0;left:0;right:0;height:3px;z-index:999;background:var(--bg);overflow:hidden}
+.thinking-bar.active{display:block}
+.thinking-bar .pulse{position:absolute;height:100%;width:30%;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:thinkSlide 1.5s ease-in-out infinite}
+@keyframes thinkSlide{0%{left:-30%}100%{left:100%}}
+.thinking-label{display:none;position:fixed;top:6px;right:20px;z-index:999;font-size:0.7rem;color:var(--accent);letter-spacing:.05em;animation:thinkFade 1.5s ease-in-out infinite}
+@keyframes thinkFade{0%,100%{opacity:0.4}50%{opacity:1}}
 
 .chat-input{border-top:1px solid var(--border);padding:12px;display:flex;gap:8px;background:var(--surface)}
 .chat-input textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 14px;font-family:inherit;font-size:0.9rem;resize:none;min-height:44px;max-height:120px}
@@ -82,6 +88,9 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
 </style>
 </head>
 <body>
+
+<div class="thinking-bar" id="thinkingBar"><div class="pulse"></div></div>
+<div class="thinking-label" id="thinkingLabel">working</div>
 
 <header>
   <h1>Context <span>Inspector</span> Setup Wizard</h1>
@@ -239,6 +248,18 @@ const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
 let bellChart = null;
 
+// ── Thinking indicator ─────────────────────────────
+function showThinking(label) {
+  document.getElementById('thinkingBar').classList.add('active');
+  const lbl = document.getElementById('thinkingLabel');
+  lbl.textContent = label || 'working';
+  lbl.style.display = 'block';
+}
+function hideThinking() {
+  document.getElementById('thinkingBar').classList.remove('active');
+  document.getElementById('thinkingLabel').style.display = 'none';
+}
+
 // Auto-resize textarea
 chatInput.addEventListener('input', () => {
   chatInput.style.height = 'auto';
@@ -272,6 +293,7 @@ async function setApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
   if (!key) { addMessage('system', 'Please paste a key first.'); return; }
   addMessage('system', 'Validating API key...');
+  showThinking('validating key');
   try {
     const r = await fetch('/api/setup/key', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key}) });
     const data = await r.json();
@@ -289,6 +311,7 @@ async function setApiKey() {
   } catch (err) {
     addMessage('system', 'Network error setting key: ' + err.message);
   }
+  hideThinking();
 }
 
 // Scan project
@@ -296,9 +319,10 @@ async function scanProject() {
   const dir = document.getElementById('dirInput').value.trim();
   if (!dir) return;
   addMessage('system', 'Scanning ' + dir + '...');
+  showThinking('scanning project & generating domain');
   const r = await fetch('/api/setup/scan', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({dirPath: dir}) });
   const data = await r.json();
-  if (data.error) { addMessage('system', 'Error: ' + data.error); return; }
+  if (data.error) { hideThinking(); addMessage('system', 'Error: ' + data.error); return; }
 
   document.getElementById('projectStatus').textContent = data.path + ' (' + data.fileCount + ' files)';
   const fileList = document.getElementById('fileList');
@@ -310,6 +334,7 @@ async function scanProject() {
     scanMsg += '. Detected ' + data.contextFilesFound + ' context-related files (' + data.promptFilesFound + ' prompt files, ' + data.codeWithPrompts + ' code files with prompts).';
   }
   addMessage('system', scanMsg);
+  hideThinking();
 
   // Auto-populate Preview tab with AI-generated domain
   if (data.hasAutoDomain || data.hasAutoContext) {
@@ -336,6 +361,7 @@ async function sendMessage() {
 
   addMessage('user', msg);
   sendBtn.disabled = true;
+  showThinking('thinking');
   const typing = document.createElement('div');
   typing.className = 'typing';
   typing.textContent = 'Thinking...';
@@ -346,6 +372,7 @@ async function sendMessage() {
     const r = await fetch('/api/setup/chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({message: msg}) });
     const data = await r.json();
     typing.remove();
+    hideThinking();
 
     if (data.error) { addMessage('system', 'Error: ' + data.error); return; }
 
@@ -361,6 +388,7 @@ async function sendMessage() {
     }
   } catch (err) {
     typing.remove();
+    hideThinking();
     addMessage('system', 'Network error: ' + err.message);
   }
   sendBtn.disabled = false;
@@ -412,10 +440,12 @@ async function runPreview() {
   const statusEl = document.getElementById('domainStatus');
   statusEl.textContent = 'Analyzing...';
   statusEl.style.color = 'var(--muted)';
+  showThinking('analyzing');
 
   const r = await fetch('/api/setup/analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text, chunkSize, domainReference}) });
   const data = await r.json();
 
+  hideThinking();
   if (data.error) {
     statusEl.textContent = data.error;
     statusEl.style.color = 'var(--red)';
