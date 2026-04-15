@@ -230,10 +230,25 @@ function showPanel(id, btn) {
 // Set API key
 async function setApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) return;
-  await fetch('/api/setup/key', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key}) });
-  document.getElementById('apiDot').className = 'dot on';
-  addMessage('system', 'API key set. Ready to chat!');
+  if (!key) { addMessage('system', 'Please paste a key first.'); return; }
+  addMessage('system', 'Validating API key...');
+  try {
+    const r = await fetch('/api/setup/key', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key}) });
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('apiDot').className = 'dot on';
+      if (data.validated) {
+        addMessage('system', 'API key validated and set. Ready to chat!');
+      } else {
+        addMessage('system', 'API key saved. ' + (data.note || 'Could not validate — try chatting.'));
+      }
+    } else {
+      document.getElementById('apiDot').className = 'dot off';
+      addMessage('system', 'Key rejected: ' + (data.error || 'Unknown error'));
+    }
+  } catch (err) {
+    addMessage('system', 'Network error setting key: ' + err.message);
+  }
 }
 
 // Scan project

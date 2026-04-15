@@ -66,12 +66,39 @@ When you have enough information, output a configuration block in this format:
 
 // ── API Routes ────────────────────────────────────────
 
-// Set API key
-app.post('/api/setup/key', (req, res) => {
+// Set API key — validates it before accepting
+app.post('/api/setup/key', async (req, res) => {
   const { key } = req.body;
   if (!key) return res.status(400).json({ error: 'key required' });
-  sessionState.apiKey = key;
-  res.json({ ok: true });
+
+  if (!Anthropic) {
+    sessionState.apiKey = key;
+    return res.json({ ok: true, validated: false, note: 'SDK not installed, key stored but not validated' });
+  }
+
+  // Validate the key with a minimal API call
+  try {
+    const client = new Anthropic({ apiKey: key });
+    await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'hi' }],
+    });
+    sessionState.apiKey = key;
+    res.json({ ok: true, validated: true });
+  } catch (err) {
+    const status = err.status || err.statusCode || 500;
+    if (status === 401) {
+      return res.status(401).json({ error: 'Invalid API key. Check that the key is correct and not expired.' });
+    }
+    if (status === 500) {
+      // Transient Anthropic error — accept the key anyway, it's likely valid
+      sessionState.apiKey = key;
+      return res.json({ ok: true, validated: false, note: 'Anthropic returned 500 (transient). Key accepted — retry chat.' });
+    }
+    sessionState.apiKey = key;
+    res.json({ ok: true, validated: false, note: err.message });
+  }
 });
 
 // Check if API key is set
@@ -219,13 +246,27 @@ Key files: ${sessionState.projectSummary.topFiles.slice(0, 15).join(', ')}`;
         : m.content,
     }));
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      temperature: 0.3,
-      system: SYSTEM_PROMPT + contextInfo,
-      messages,
-    });
+    // Retry up to 3 times for transient 500s
+    let response;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        response = await client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2048,
+          temperature: 0.3,
+          system: SYSTEM_PROMPT + contextInfo,
+          messages,
+        });
+        break;
+      } catch (retryErr) {
+        const status = retryErr.status || retryErr.statusCode || 0;
+        if (status === 500 && attempt < 3) {
+          await new Promise(r => setTimeout(r, 1000 * attempt)); // backoff
+          continue;
+        }
+        throw retryErr;
+      }
+    }
 
     const reply = response.content[0].text;
     sessionState.chatHistory.push({ role: 'assistant', content: reply });
