@@ -201,6 +201,12 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
 
       <!-- Preview Panel -->
       <div class="panel" id="panel-preview">
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:12px;">
+          <h4 style="font-size:0.75rem;text-transform:uppercase;color:var(--accent);letter-spacing:.08em;margin-bottom:6px;">Domain Reference (baseline — what "on-topic" means)</h4>
+          <p style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">Paste representative text from your domain, or scan a project in the Setup tab. The analysis scores your input text against this reference.</p>
+          <textarea id="domainRefText" placeholder="Paste domain-specific text here (e.g., your system prompt, key documentation, or representative content)..." style="width:100%;min-height:60px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:0.8rem;font-family:inherit;resize:vertical"></textarea>
+          <div id="domainStatus" style="font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
+        </div>
         <div class="preview-controls">
           <select id="prevConcentrator">
             <option value="domain">Domain</option>
@@ -381,11 +387,29 @@ function copyConfig(id) {
 // Preview analysis
 async function runPreview() {
   const text = document.getElementById('previewText').value;
-  if (!text) return;
+  if (!text) { alert('Paste sample text to analyze.'); return; }
   const chunkSize = parseInt(document.getElementById('prevChunkSize').value);
+  const domainReference = document.getElementById('domainRefText').value.trim() || undefined;
 
-  const r = await fetch('/api/setup/analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text, chunkSize}) });
+  const statusEl = document.getElementById('domainStatus');
+  statusEl.textContent = 'Analyzing...';
+  statusEl.style.color = 'var(--muted)';
+
+  const r = await fetch('/api/setup/analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text, chunkSize, domainReference}) });
   const data = await r.json();
+
+  if (data.error) {
+    statusEl.textContent = data.error;
+    statusEl.style.color = 'var(--red)';
+    document.getElementById('previewStats').innerHTML = '';
+    if (bellChart) { bellChart.destroy(); bellChart = null; }
+    document.getElementById('previewTerms').innerHTML = '';
+    return;
+  }
+
+  statusEl.textContent = 'Domain source: ' + (data.domainSource || 'unknown') + ' (' + (data.domainTermCount || 0) + ' terms)';
+  statusEl.style.color = 'var(--green)';
+
   const conc = document.getElementById('prevConcentrator').value;
   const side = conc === 'user' ? data.user : data.domain;
 

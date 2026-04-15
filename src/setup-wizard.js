@@ -264,15 +264,57 @@ app.post('/api/setup/analyze', (req, res) => {
   const { text, chunkSize, domainReference } = req.body;
   if (!text) return res.status(400).json({ error: 'text required' });
 
-  let fixedDomainTerms;
-  if (domainReference) {
-    fixedDomainTerms = extractDomainTerms(domainReference, { chunkSize: chunkSize || 500 });
+  // Determine domain reference: explicit > config-suggested > project files > reject
+  let refText = domainReference || null;
+
+  if (!refText && sessionState.suggestedConfig && sessionState.suggestedConfig.domainReference) {
+    refText = sessionState.suggestedConfig.domainReference;
+  }
+
+  if (!refText && sessionState.projectFiles.length > 0) {
+    // Use first few project files as domain reference
+    const samples = sessionState.projectFiles.slice(0, 5);
+    const parts = [];
+    for (const f of samples) {
+      try { parts.push(fs.readFileSync(f.path, 'utf-8').slice(0, 5000)); } catch { /* skip */ }
+    }
+    if (parts.length > 0) refText = parts.join('\n\n');
+  }
+
+  if (!refText) {
+    return res.status(400).json({
+      error: 'No domain baseline established. Either scan a project first (Setup tab), chat with the wizard to establish your domain, or paste domain reference text in the field below.',
+      needsDomain: true,
+    });
+  }
+
+  // Domain reference must be different from the input text
+  // (analyzing text against itself always scores 1.0 — meaningless)
+  if (refText.trim() === text.trim()) {
+    return res.status(400).json({
+      error: 'Domain reference cannot be the same as the input text. The reference defines what "on-topic" means — the input is what you\'re testing against it.',
+      needsDomain: true,
+    });
+  }
+
+  const fixedDomainTerms = extractDomainTerms(refText, { chunkSize: chunkSize || 500 });
+
+  // Sanity check: if no meaningful terms extracted, the reference is too short or generic
+  if (Object.keys(fixedDomainTerms).length < 3) {
+    return res.status(400).json({
+      error: 'Domain reference is too short or generic to extract meaningful terms. Provide more representative text (at least a paragraph of domain-specific content).',
+      needsDomain: true,
+    });
   }
 
   const result = analyzeContext(text, {
     chunkSize: chunkSize || 500,
     fixedDomainTerms,
   });
+
+  // Add metadata about what reference was used
+  result.domainSource = domainReference ? 'explicit' : sessionState.suggestedConfig ? 'wizard-config' : 'project-files';
+  result.domainTermCount = Object.keys(fixedDomainTerms).length;
 
   res.json(result);
 });
