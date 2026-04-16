@@ -1,5 +1,9 @@
 # Context Inspector
 
+[![npm version](https://img.shields.io/npm/v/contrarianai-context-inspector.svg)](https://www.npmjs.com/package/contrarianai-context-inspector)
+[![smithery badge](https://smithery.ai/badge/kevinluddy39/contrarianai-context-inspector)](https://smithery.ai/server/kevinluddy39/contrarianai-context-inspector)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 > Drop-in MCP inspector that watches the statistical health of AI context windows — live bell curves catch domain-alignment degradation 3 steps before output failure.
 
 **Your AI system is failing 3 steps before you notice. This drop-in MCP inspector shows you when — with live graphical bell curves tracking domain-alignment degradation.**
