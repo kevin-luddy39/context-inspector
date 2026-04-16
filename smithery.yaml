@@ -1,0 +1,44 @@
+# Smithery configuration for contrarianai-context-inspector
+# https://smithery.ai/docs/config
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      anthropicApiKey:
+        type: string
+        description: Optional — Anthropic API key. Only needed if you use the --setup wizard (not required for MCP tool calls).
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'contrarianai-context-inspector', '--mcp'],
+      env: config.anthropicApiKey ? { ANTHROPIC_API_KEY: config.anthropicApiKey } : {}
+    })
+
+# Tool manifest — used by Smithery's validator to confirm the server responds correctly
+tools:
+  - name: analyze_context
+    description: Full context analysis — domain alignment, user alignment, bell curve statistics, per-chunk breakdown
+  - name: get_bell_curve
+    description: Quick bell curve summary (mean, σ, histogram) for domain or user alignment
+  - name: get_chunks
+    description: Per-chunk alignment scores with top-N highest and lowest
+  - name: compare_alignment
+    description: Side-by-side domain vs user alignment comparison
+
+metadata:
+  name: Context Inspector
+  description: Statistical early warning for AI context window degradation. Detects the bell curve signal that output evaluation misses — 3 steps before failure.
+  keywords:
+    - context-rot
+    - monitoring
+    - diagnostic
+    - bell-curve
+    - domain-alignment
+    - statistical
+    - leading-indicator
+  license: MIT
+  homepage: https://github.com/kevin-luddy39/context-inspector
+  whitepaper: https://github.com/kevin-luddy39/context-inspector/blob/main/docs/whitepaper.md
