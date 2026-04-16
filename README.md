@@ -60,11 +60,30 @@ Save, restart Claude Desktop, and look for the hammer icon.
 
 ### What you'll see
 
-<!-- TODO: Add screenshots
-  1. docs/assets/claude-desktop-config.png — the config file open in an editor with the mcpServers block highlighted
-  2. docs/assets/claude-desktop-hammer.png — Claude Desktop chat input with the hammer icon showing context-inspector tools
-  3. docs/assets/claude-desktop-tool-call.png — a sample tool call showing analyze_context being invoked
--->
+<!-- Screenshots render automatically once PNGs are dropped into docs/assets/
+     Capture guide: docs/assets/README.md -->
+
+<table>
+<tr>
+<td width="33%" valign="top">
+<b>1. Config file</b><br>
+<a href="docs/assets/claude-desktop-config.png"><img src="docs/assets/claude-desktop-config.png" alt="claude_desktop_config.json showing the context-inspector mcpServers entry" onerror="this.style.display='none'"></a>
+<br><sub>The <code>mcpServers → context-inspector</code> entry that the installer writes.</sub>
+</td>
+<td width="33%" valign="top">
+<b>2. Hammer icon + tool list</b><br>
+<a href="docs/assets/claude-desktop-hammer.png"><img src="docs/assets/claude-desktop-hammer.png" alt="Claude Desktop hammer icon with 4 context-inspector tools listed" onerror="this.style.display='none'"></a>
+<br><sub>🔨 icon at bottom of chat. Click to see all 4 tools.</sub>
+</td>
+<td width="33%" valign="top">
+<b>3. Tool call in action</b><br>
+<a href="docs/assets/claude-desktop-tool-call.png"><img src="docs/assets/claude-desktop-tool-call.png" alt="Claude calling get_bell_curve with a sample text and showing the response" onerror="this.style.display='none'"></a>
+<br><sub>Sample: <code>get_bell_curve</code> on the three-little-pigs sentence.</sub>
+</td>
+</tr>
+</table>
+
+> Screenshots not visible? They're captured per [`docs/assets/README.md`](docs/assets/README.md). Run the installer + verification prompt and drop the PNGs there.
 
 **Expected indicators:**
 - 🔨 Hammer icon visible at bottom of chat input
