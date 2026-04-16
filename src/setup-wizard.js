@@ -9,6 +9,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { analyzeContext, extractDomainTerms } = require('./core/analyzer');
 const { analyzeContextExtended } = require('./core/analyzer');
 
@@ -21,6 +22,41 @@ try { Anthropic = require('@anthropic-ai/sdk'); } catch { Anthropic = null; }
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '..', 'web', 'setup')));
+
+// ── Credential store (opt-in local persistence) ──────
+// Stored at ~/.context-inspector/credentials.json (mode 0600).
+// Never written without an explicit user action from the UI.
+const CRED_DIR = path.join(os.homedir(), '.context-inspector');
+const CRED_FILE = path.join(CRED_DIR, 'credentials.json');
+
+function maskKey(key) {
+  if (!key || typeof key !== 'string') return null;
+  const tail = key.slice(-4);
+  return `sk-ant-…${tail}`;
+}
+
+function loadStoredKey() {
+  try {
+    if (!fs.existsSync(CRED_FILE)) return null;
+    const raw = fs.readFileSync(CRED_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    if (data && typeof data.anthropicApiKey === 'string' && data.anthropicApiKey.length > 0) {
+      return data.anthropicApiKey;
+    }
+  } catch (_) { /* corrupt file — treat as no stored key */ }
+  return null;
+}
+
+function saveStoredKey(key) {
+  fs.mkdirSync(CRED_DIR, { recursive: true, mode: 0o700 });
+  const payload = { anthropicApiKey: key, savedAt: new Date().toISOString() };
+  fs.writeFileSync(CRED_FILE, JSON.stringify(payload, null, 2), { mode: 0o600 });
+  try { fs.chmodSync(CRED_FILE, 0o600); } catch (_) { /* best-effort on Windows */ }
+}
+
+function clearStoredKey() {
+  if (fs.existsSync(CRED_FILE)) fs.unlinkSync(CRED_FILE);
+}
 
 // ── State ─────────────────────────────────────────────
 let sessionState = {
@@ -163,12 +199,68 @@ app.post('/api/setup/key', async (req, res) => {
 
 // Check if API key is set
 app.get('/api/setup/status', (req, res) => {
+  const stored = loadStoredKey();
   res.json({
     hasApiKey: !!sessionState.apiKey,
     hasAnthropicSdk: !!Anthropic,
+    hasStoredKey: !!stored,
+    storedKeyHint: stored ? maskKey(stored) : null,
     projectPath: sessionState.projectPath,
     fileCount: sessionState.projectFiles.length,
   });
+});
+
+// Save current session key to disk (opt-in)
+app.post('/api/setup/key/save', (req, res) => {
+  if (!sessionState.apiKey) {
+    return res.status(400).json({ error: 'No key in session to save. Set a key first.' });
+  }
+  try {
+    saveStoredKey(sessionState.apiKey);
+    res.json({ ok: true, path: CRED_FILE, hint: maskKey(sessionState.apiKey) });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not write credentials file: ' + err.message });
+  }
+});
+
+// Load the stored key into the current session (user consent)
+app.post('/api/setup/key/use-stored', async (req, res) => {
+  const stored = loadStoredKey();
+  if (!stored) return res.status(404).json({ error: 'No stored key found.' });
+
+  if (!Anthropic) {
+    sessionState.apiKey = stored;
+    return res.json({ ok: true, validated: false, hint: maskKey(stored), note: 'SDK not installed, stored key loaded but not validated' });
+  }
+
+  try {
+    const client = new Anthropic({ apiKey: stored });
+    await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'hi' }],
+    });
+    sessionState.apiKey = stored;
+    res.json({ ok: true, validated: true, hint: maskKey(stored) });
+  } catch (err) {
+    const status = err.status || err.statusCode || 500;
+    if (status === 401) {
+      return res.status(401).json({ error: 'Stored key is no longer valid. Forget it and paste a fresh one.', hint: maskKey(stored) });
+    }
+    // Transient error — accept optimistically
+    sessionState.apiKey = stored;
+    res.json({ ok: true, validated: false, hint: maskKey(stored), note: err.message });
+  }
+});
+
+// Forget the stored key
+app.delete('/api/setup/key/stored', (req, res) => {
+  try {
+    clearStoredKey();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not delete credentials file: ' + err.message });
+  }
 });
 
 // Grant file access — scan a directory

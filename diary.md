@@ -1,5 +1,12 @@
 # Project Diary
 
+## 2026-04-16
+
+- Added opt-in local persistence for the Anthropic API key in the setup wizard. Stored at `~/.context-inspector/credentials.json` (dir 0700, file 0600) — never written without explicit user action.
+- New endpoints in `src/setup-wizard.js`: `POST /api/setup/key/save`, `POST /api/setup/key/use-stored`, `DELETE /api/setup/key/stored`; `GET /api/setup/status` now returns `hasStoredKey` + `storedKeyHint`.
+- UI (`web/setup/index.html`): banner on load offering to use the saved key (masked to `sk-ant-…abc1`, never auto-populated into the password field) and a post-validation prompt asking whether to save the current key locally.
+- Welcome text updated from "not stored" to "not stored unless you opt in".
+
 ## 2026-04-13
 
 - Added `.claude/` configuration directory with SSA-LAB commands, example specs, and settings.

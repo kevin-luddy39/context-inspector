@@ -106,7 +106,7 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
     <div class="chat-messages" id="messages">
       <div class="msg system">
         Welcome! I'll help you configure Context Inspector for your AI workflow.<br><br>
-        First: paste your <strong>Anthropic API key</strong> in the Setup tab on the right (needed for this wizard only — not stored).<br><br>
+        First: paste your <strong>Anthropic API key</strong> in the Setup tab on the right (not stored unless you opt in).<br><br>
         Then tell me: <strong>What AI system are you building?</strong> (RAG pipeline, agents, chatbot, copilot, etc.)
       </div>
     </div>
@@ -130,9 +130,27 @@ header h1{font-size:1rem;font-weight:700} header h1 span{color:var(--accent)}
       <div class="panel active" id="panel-setup">
         <div class="setup-section">
           <h3>Anthropic API Key</h3>
+          <div id="storedKeyBanner" style="display:none;background:var(--s2);border:1px solid var(--accent);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-size:0.8rem;">
+            <div style="color:var(--muted);margin-bottom:6px;">
+              Saved key detected: <strong id="storedKeyHint" style="color:var(--text);font-family:monospace;"></strong>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="useStoredKey()">Use saved key</button>
+              <button class="btn btn-ghost" onclick="forgetStoredKey()">Forget saved key</button>
+            </div>
+          </div>
           <div class="key-input">
             <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
             <button class="btn btn-ghost" onclick="setApiKey()">Set</button>
+          </div>
+          <div id="saveKeyPrompt" style="display:none;background:var(--s2);border:1px dashed var(--border);border-radius:6px;padding:10px 12px;margin-top:8px;font-size:0.8rem;">
+            <div style="color:var(--muted);margin-bottom:6px;">
+              Save this key locally for future sessions? Stored at <code style="font-size:0.75rem;">~/.context-inspector/credentials.json</code> (mode 0600).
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="saveCurrentKey()">Save locally</button>
+              <button class="btn btn-ghost" onclick="dismissSavePrompt()">No thanks</button>
+            </div>
           </div>
         </div>
         <div class="setup-section">
@@ -278,6 +296,10 @@ document.getElementById('prevChunkSize').addEventListener('input', (e) => {
   const s = await r.json();
   document.getElementById('apiDot').className = 'dot ' + (s.hasApiKey ? 'on' : 'off');
   if (s.projectPath) document.getElementById('projectStatus').textContent = s.projectPath;
+  if (s.hasStoredKey && !s.hasApiKey) {
+    document.getElementById('storedKeyHint').textContent = s.storedKeyHint || 'sk-ant-…';
+    document.getElementById('storedKeyBanner').style.display = 'block';
+  }
 })();
 
 // Panel switching
@@ -304,6 +326,8 @@ async function setApiKey() {
       } else {
         addMessage('system', 'API key saved. ' + (data.note || 'Could not validate — try chatting.'));
       }
+      document.getElementById('storedKeyBanner').style.display = 'none';
+      document.getElementById('saveKeyPrompt').style.display = 'block';
     } else {
       document.getElementById('apiDot').className = 'dot off';
       addMessage('system', 'Key rejected: ' + (data.error || 'Unknown error'));
@@ -312,6 +336,66 @@ async function setApiKey() {
     addMessage('system', 'Network error setting key: ' + err.message);
   }
   hideThinking();
+}
+
+// Use the locally stored key (user consent on each session)
+async function useStoredKey() {
+  showThinking('loading saved key');
+  try {
+    const r = await fetch('/api/setup/key/use-stored', { method: 'POST' });
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('apiDot').className = 'dot on';
+      document.getElementById('storedKeyBanner').style.display = 'none';
+      document.getElementById('saveKeyPrompt').style.display = 'none';
+      const msg = data.validated
+        ? 'Saved key loaded and validated (' + (data.hint || '') + '). Ready to chat!'
+        : 'Saved key loaded (' + (data.hint || '') + '). ' + (data.note || 'Could not validate — try chatting.');
+      addMessage('system', msg);
+    } else {
+      addMessage('system', 'Could not use saved key: ' + (data.error || 'Unknown error'));
+    }
+  } catch (err) {
+    addMessage('system', 'Network error loading saved key: ' + err.message);
+  }
+  hideThinking();
+}
+
+// Forget the locally stored key
+async function forgetStoredKey() {
+  if (!confirm('Delete the locally stored Anthropic key? You will need to paste it again next session.')) return;
+  try {
+    const r = await fetch('/api/setup/key/stored', { method: 'DELETE' });
+    const data = await r.json();
+    if (data.ok) {
+      document.getElementById('storedKeyBanner').style.display = 'none';
+      addMessage('system', 'Saved key deleted.');
+    } else {
+      addMessage('system', 'Could not forget saved key: ' + (data.error || 'Unknown error'));
+    }
+  } catch (err) {
+    addMessage('system', 'Network error forgetting saved key: ' + err.message);
+  }
+}
+
+// Save the current session key to disk
+async function saveCurrentKey() {
+  try {
+    const r = await fetch('/api/setup/key/save', { method: 'POST' });
+    const data = await r.json();
+    if (data.ok) {
+      addMessage('system', 'Key saved locally (' + (data.hint || '') + '). It will be offered on next launch.');
+      document.getElementById('saveKeyPrompt').style.display = 'none';
+    } else {
+      addMessage('system', 'Could not save key: ' + (data.error || 'Unknown error'));
+    }
+  } catch (err) {
+    addMessage('system', 'Network error saving key: ' + err.message);
+  }
+}
+
+function dismissSavePrompt() {
+  document.getElementById('saveKeyPrompt').style.display = 'none';
 }
 
 // Scan project
