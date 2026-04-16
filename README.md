@@ -4,13 +4,21 @@
 [![smithery badge](https://smithery.ai/badge/kevinluddy39/contrarianai-context-inspector)](https://smithery.ai/server/kevinluddy39/contrarianai-context-inspector)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-> Drop-in MCP inspector that watches the statistical health of AI context windows — live bell curves catch domain-alignment degradation 3 steps before output failure.
+> The drop-in MCP inspector for **Bell Tuning™** — reading the statistical bell curve of AI context windows to catch domain-alignment degradation 3 steps before output failure.
 
-**Your AI system is failing 3 steps before you notice. This drop-in MCP inspector shows you when — with live graphical bell curves tracking domain-alignment degradation.**
-
-Context Inspector monitors the statistical structure of AI context windows in real time. It detects domain alignment degradation — the leading indicator of output failure — before the output itself degrades.
+**Your AI system is failing 3 steps before you notice.** Context Inspector applies **Bell Tuning** to your AI workflow: continuously reading the statistical bell curve of context-window content so you can spot degradation as it forms, not after it ships.
 
 📄 **Research-backed:** Every signal in this tool traces to a controlled experiment documented in the [white paper](docs/whitepaper.md).
+
+## What is Bell Tuning?
+
+**Bell Tuning** is the practice of treating an AI context window as a measurable distribution — and tuning your workflow against the shape of that distribution rather than against the output it eventually produces.
+
+- **Tighter bell, right-shifted →** context is on-domain and consistent
+- **Wider bell, drifting left →** contamination, summary loss, or topic drift entering
+- **Flat bell near zero →** original content gone; system still answering, but on noise
+
+You don't tune by listening to the output. You tune by watching the bell. Context Inspector is the instrument.
 
 ---
 

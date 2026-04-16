@@ -111,7 +111,7 @@ footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color
 <section class="hero">
 <div class="container">
   <h1>Your AI is failing <em>3 steps</em> before you notice</h1>
-  <p class="sub">Context Inspector monitors the statistical structure of AI context windows in real time. It detects domain alignment degradation — the leading indicator of output failure — before the output itself degrades.</p>
+  <p class="sub"><strong>Bell Tuning&trade;</strong> for AI workflows. Context Inspector reads the statistical bell curve of your context window in real time — so you tune the system on the signal, not the symptom.</p>
 
   <div class="cmd">
     <span class="comment"># AI-guided setup (easiest)</span><br>
@@ -142,6 +142,23 @@ footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color
     [Screen recording: dashboard step slider 10 → 15, bell curve collapsing]
   </div>
   <p class="demo-caption">"The output still scored 0.85 at step 11. The bell curve had already spiked 56%."</p>
+</div>
+</section>
+
+<!-- BELL TUNING -->
+<section class="signal" id="bell-tuning" style="border-top:1px solid var(--border);">
+<div class="container">
+  <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:8px;">What is Bell Tuning?</h2>
+  <p style="color:var(--muted);margin-bottom:16px;font-size:0.95rem;"><strong>Bell Tuning</strong> is the practice of treating an AI context window as a measurable distribution &mdash; and tuning your workflow against the shape of that distribution rather than against the output it eventually produces.</p>
+  <table style="width:100%;border-collapse:collapse;max-width:700px;margin:0 auto;">
+    <thead><tr><th style="text-align:left;padding:8px 12px;background:var(--surface);font-size:0.7rem;text-transform:uppercase;color:var(--muted);letter-spacing:.06em;border-bottom:1px solid var(--border);">Bell Shape</th><th style="text-align:left;padding:8px 12px;background:var(--surface);font-size:0.7rem;text-transform:uppercase;color:var(--muted);letter-spacing:.06em;border-bottom:1px solid var(--border);">What it means</th></tr></thead>
+    <tbody>
+      <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border);"><span style="color:var(--green);font-weight:700;">Tight, right-shifted</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:0.9rem;">Context is on-domain and consistent. Healthy.</td></tr>
+      <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border);"><span style="color:var(--accent);font-weight:700;">Wider, drifting left</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:0.9rem;">Contamination, summary loss, or topic drift entering. Tune now.</td></tr>
+      <tr><td style="padding:10px 12px;"><span style="color:var(--red);font-weight:700;">Flat near zero</span></td><td style="padding:10px 12px;color:var(--muted);font-size:0.9rem;">Original content gone. System still answering, but on noise.</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--muted);margin-top:16px;font-size:0.95rem;text-align:center;"><strong>You don&rsquo;t tune by listening to the output. You tune by watching the bell.</strong> Context Inspector is the instrument.</p>
 </div>
 </section>
 

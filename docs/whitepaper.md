@@ -8,7 +8,13 @@
 
 ## Abstract
 
-We demonstrate that the statistical distribution of domain alignment scores across context window chunks is a **leading indicator** of AI system failure — detectable before output quality degrades. Using a controlled experiment with constrained context windows, forced summarization, and progressive content contamination, we show that the standard deviation (σ) of the alignment bell curve signals structural degradation **3 steps before** output evaluation catches the failure. We introduce Context Inspector, an open-source, MCP-aware tool that computes these distributions in real time and surfaces the warning signal that output-only evaluation misses.
+We demonstrate that the statistical distribution of domain alignment scores across context window chunks is a **leading indicator** of AI system failure — detectable before output quality degrades. Using a controlled experiment with constrained context windows, forced summarization, and progressive content contamination, we show that the standard deviation (σ) of the alignment bell curve signals structural degradation **3 steps before** output evaluation catches the failure. We introduce **Bell Tuning** — the practice of continuously reading and reacting to this distribution as a workflow signal — and Context Inspector, an open-source, MCP-aware instrument that operationalizes Bell Tuning in any AI system.
+
+## Definitions
+
+- **Bell curve.** The histogram of per-chunk domain-alignment scores across an AI context window, fitted against a Gaussian for shape comparison.
+- **Bell Tuning.** The practice of (1) measuring this bell curve continuously, (2) interpreting its mean, σ, skewness, and per-chunk rug as health signals, and (3) intervening on the workflow (refresh, eviction, re-grounding, re-prompt) when the shape deviates from baseline. Distinct from output evaluation: Bell Tuning watches the system, not the answer.
+- **Bell Tuner.** Any system, agent, or operator that performs Bell Tuning. Context Inspector is one.
 
 ---
 
