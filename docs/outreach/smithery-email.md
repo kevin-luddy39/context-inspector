@@ -1,41 +1,50 @@
 # Email Draft: Smithery Validation Request
 
 **To:** support@smithery.ai
-**Subject:** Validation request: context-inspector — first MCP server for statistical context monitoring
+**Subject:** Validation request: contrarianai-context-inspector — deployed, 4 tools scanning clean
 
 ---
 
 Hi Smithery team,
 
-I just published **contrarianai-context-inspector** to npm and added a `smithery.yaml` to the repo. I'd like to request validation on the listing.
+I'd like to request validation (remove the "Unvalidated" badge) on this listing:
 
-**What it does:** It's the first MCP server (that I've found) focused on *proactive statistical monitoring* of AI context windows, rather than debugging tool calls. It computes domain alignment distributions across context chunks and detects the bell curve degradation pattern that signals context rot before the output quality drops.
+**https://smithery.ai/server/kevinluddy39/contrarianai-context-inspector**
 
-**Why it's different from existing MCP servers:**
-- Anthropic's MCP Inspector → great for manual debugging of tool calls
-- Context Inspector → continuous statistical monitoring of context window health
+## What's complete
 
-We're complementary, not competitive. MCP Inspector answers "is my tool working?" — Context Inspector answers "is my context about to fail?"
+- ✅ Deployed as external HTTPS on Render: `https://context-inspector-mcp.onrender.com/mcp`
+- ✅ Smithery's scanner picked up all 4 tools (analyze_context, get_bell_curve, get_chunks, compare_alignment) — capabilities section is populated
+- ✅ npm package: https://www.npmjs.com/package/contrarianai-context-inspector
+- ✅ MIT-licensed source: https://github.com/kevin-luddy39/context-inspector
+- ✅ Tests: 11/11 passing (run `npm test`)
+- ✅ One-command installer: `npx contrarianai-context-inspector --install-mcp` (auto-configures Claude Desktop, Cursor, Windsurf, Cline, Claude Code)
+- ✅ AI-guided setup wizard: `npx contrarianai-context-inspector --setup`
+- ✅ White paper with experimental methodology: https://github.com/kevin-luddy39/context-inspector/blob/main/docs/whitepaper.md
 
-**Research backing:** The methodology is documented in a white paper in the repo ([docs/whitepaper.md](https://github.com/kevin-luddy39/context-inspector/blob/main/docs/whitepaper.md)). I ran a controlled experiment with 40 steps of progressive context contamination + forced summarization across three base stories. The bell curve σ flagged degradation **3 steps before** output evaluation caught the failure. The tool implements the exact metrics that surfaced in the experiment.
+## What makes it different
 
-**Key links:**
-- npm: https://www.npmjs.com/package/contrarianai-context-inspector
-- GitHub: https://github.com/kevin-luddy39/context-inspector
-- White paper: https://github.com/kevin-luddy39/context-inspector/blob/main/docs/whitepaper.md
-- 4 MCP tools: `analyze_context`, `get_bell_curve`, `get_chunks`, `compare_alignment`
+This is the only MCP server I've found focused on **proactive statistical monitoring** of context windows rather than debugging tool calls.
 
-**How to test it:**
-```bash
-npx -y contrarianai-context-inspector --mcp
-```
+- **Anthropic's MCP Inspector** → manual debugging of tool calls
+- **Context Inspector** → continuous statistical monitoring of context window health
 
-Or use the AI-guided setup wizard at `npx -y contrarianai-context-inspector --setup` which walks users through configuration and auto-generates their `.mcp.json`.
+Complementary, not competitive. The methodology is based on a controlled experiment documented in the white paper: bell curve σ flagged context rot **3 steps before** LLM-as-judge scoring caught the output failure.
 
-Happy to answer questions or provide any additional validation material you need. Would love to get the "Validated" badge and help users find the tool.
+## Why validation matters here
+
+The tool is research-backed and implements a specific, testable claim (leading-indicator detection). Validation signals to potential users that the listing is legitimate and the maintainer (me) is verifiable. I've:
+
+- Claimed the GitHub ownership via OAuth through your CLI
+- Published via `smithery mcp publish` from the authenticated session
+- Set up the deployment URL correctly
+- Written comprehensive docs including a Claude Desktop setup section with troubleshooting
+
+Happy to provide any additional materials you need for validation. Looking forward to it.
 
 Thanks,
 
 Kevin Luddy
 kevin.luddy39@gmail.com
 https://contrarianai-landing.onrender.com
+https://github.com/kevin-luddy39/context-inspector

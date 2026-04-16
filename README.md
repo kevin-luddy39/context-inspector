@@ -14,6 +14,84 @@ Context Inspector monitors the statistical structure of AI context windows in re
 
 ---
 
+## 🚀 One-Command Install
+
+```bash
+npx contrarianai-context-inspector --install-mcp
+```
+
+This auto-detects **Claude Desktop, Claude Code, Cursor, Windsurf, or Cline** and adds the MCP server to your config. Restart your client, and you're done.
+
+For a specific client: `--client=claude-desktop` (or `cursor`, `windsurf`, `cline`, `claude-code`).
+
+---
+
+## 🖥️ Claude Desktop Setup
+
+### Quick install (recommended)
+
+```bash
+npx contrarianai-context-inspector --install-mcp --client=claude-desktop
+```
+
+Then restart Claude Desktop. Look for the hammer icon (🔨) in the bottom-right of the chat input — it should show **4 new tools** from `context-inspector`.
+
+### Manual install
+
+Edit `claude_desktop_config.json` at:
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+Add:
+
+```json
+{
+  "mcpServers": {
+    "context-inspector": {
+      "command": "npx",
+      "args": ["-y", "contrarianai-context-inspector", "--mcp"]
+    }
+  }
+}
+```
+
+Save, restart Claude Desktop, and look for the hammer icon.
+
+### What you'll see
+
+<!-- TODO: Add screenshots
+  1. docs/assets/claude-desktop-config.png — the config file open in an editor with the mcpServers block highlighted
+  2. docs/assets/claude-desktop-hammer.png — Claude Desktop chat input with the hammer icon showing context-inspector tools
+  3. docs/assets/claude-desktop-tool-call.png — a sample tool call showing analyze_context being invoked
+-->
+
+**Expected indicators:**
+- 🔨 Hammer icon visible at bottom of chat input
+- Clicking it shows 4 tools: `analyze_context`, `get_bell_curve`, `get_chunks`, `compare_alignment`
+- Tool tooltips describe what each one does
+
+### Verify it works
+
+Paste this into Claude Desktop:
+
+> *Use the get_bell_curve tool to analyze this text: "The three little pigs built houses from straw, sticks, and bricks."*
+
+Claude should call the tool and respond with a bell curve summary (mean, σ, histogram shape).
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| No hammer icon | Check config JSON is valid. Restart Claude Desktop fully (quit, not just close window). |
+| Tools greyed out | Check the `npx` path in your shell (`which npx`). Claude Desktop uses system PATH. |
+| "Server disconnected" | The first `npx -y` install can take 30-60s. Wait and try again. |
+| Config file missing | Create the directory (`mkdir -p ~/Library/Application\ Support/Claude`), then add the JSON above. |
+
+For Cursor, Windsurf, Cline, or Claude Code — use the same JSON but in the respective client's config file (the installer does this automatically).
+
+---
+
 ## Need Help Diagnosing Context Degradation?
 
 Seeing σ collapse, flattening bell curves, or early mean drift in your MCP workflow?

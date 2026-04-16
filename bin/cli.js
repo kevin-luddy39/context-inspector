@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 function parseArgs(argv) {
-  const args = { file: null, concentrator: 'domain', chunkSize: 500, json: false, verbose: false, mcp: false, serve: false, setup: false };
+  const args = { file: null, concentrator: 'domain', chunkSize: 500, json: false, verbose: false, mcp: false, serve: false, setup: false, install: false };
   let i = 2;
   while (i < argv.length) {
     const arg = argv[i];
@@ -29,6 +29,7 @@ function parseArgs(argv) {
     else if (arg === '--mcp') args.mcp = true;
     else if (arg === '--serve') args.serve = true;
     else if (arg === '--setup') args.setup = true;
+    else if (arg === '--install-mcp' || arg === '--install') args.install = true;
     else if (arg === '--help' || arg === '-h') { printHelp(); process.exit(0); }
     else if (!args.file) args.file = arg;
     i++;
@@ -43,6 +44,7 @@ context-inspector — Statistical early warning for AI context degradation
 Usage:
   context-inspector <file> [options]     Analyze a file
   context-inspector - [options]          Read from stdin
+  context-inspector --install-mcp       One-command install into Claude Desktop/Cursor/etc.
   context-inspector --mcp               Start MCP server (stdio transport)
   context-inspector --serve              Start web dashboard (port 4000)
   context-inspector --setup              AI-guided setup wizard (port 4002)
@@ -92,6 +94,13 @@ function main() {
   // Setup wizard mode
   if (args.setup) {
     require(path.join(__dirname, '..', 'src', 'setup-wizard.js'));
+    return;
+  }
+
+  // One-command MCP installer
+  if (args.install) {
+    const { runInstaller } = require(path.join(__dirname, '..', 'src', 'install-mcp.js'));
+    runInstaller(process.argv);
     return;
   }
 
