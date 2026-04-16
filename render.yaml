@@ -1,0 +1,10 @@
+services:
+  - type: web
+    runtime: node
+    name: context-inspector-mcp
+    plan: free
+    buildCommand: npm install --production=false
+    startCommand: node src/http-mcp-server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
