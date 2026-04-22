@@ -34,6 +34,26 @@ For a specific client: `--client=claude-desktop` (or `cursor`, `windsurf`, `clin
 
 ---
 
+## 🔬 Part of the Bell Tuning™ suite
+
+Context Inspector is the base sensor. Four companion tools extend the same discipline to the other places AI production fails:
+
+| Tool | What it watches | Install |
+|---|---|---|
+| [**predictor-corrector**](https://www.npmjs.com/package/contrarianai-predictor-corrector) | Forecasts the bell-curve trajectory using numerical methods — detects context rot several turns ahead of output collapse | `npx contrarianai-predictor-corrector --baseline prescriptive` |
+| [**retrieval-auditor**](https://www.npmjs.com/package/contrarianai-retrieval-auditor) | RAG-specific sensor — scores each chunk-to-query alignment and flags six retrieval pathologies. Unsupervised health score tracks ground-truth precision@5 at r=0.999 | `npx contrarianai-retrieval-auditor trace.json` |
+| [**tool-call-grader**](https://www.npmjs.com/package/contrarianai-tool-call-grader) | Multi-agent / MCP sensor — grades tool calls per-call and per-session; catches silent failures, fixation, response bloat, schema drift | `npx contrarianai-tool-call-grader session.json` |
+| [**audit-report-generator**](https://www.npmjs.com/package/contrarianai-audit-report-generator) | Consumes the output of the four sensors and emits a unified audit report in markdown, HTML, or JSON | `npx contrarianai-audit-report-generator audit.json --format html` |
+
+Full manifesto + four whitepapers: [contrarianai-landing.onrender.com/bell-tuning](https://contrarianai-landing.onrender.com/bell-tuning)
+
+> **Free audit offer:** The first 10 production users that email
+> `kevin.luddy39@gmail.com` (subject: "Bell Tuning audit") get a 1-hour engineer
+> sit-down on their actual traces — bell curve, pathology flags, written report.
+> No slides.
+
+---
+
 ## 🖥️ Claude Desktop Setup
 
 ### Quick install (recommended)

@@ -6,6 +6,18 @@
 
 ---
 
+> **Running Bell Tuning in production?**
+> The first 10 teams that book an audit get a **free 1-hour Bell Tuning review** of
+> their actual workflows — bell-curve trace, pathology flags, and a written
+> report. No slide decks, no pitch — an engineer sitting down with your traces
+> for an hour.
+>
+> Book: [contrarianai-landing.onrender.com/bell-tuning](https://contrarianai-landing.onrender.com/bell-tuning)
+> or email `kevin.luddy39@gmail.com` with subject "Bell Tuning audit" and a
+> sentence on what you're running.
+
+---
+
 ## Abstract
 
 We demonstrate that the statistical distribution of domain alignment scores across context window chunks is a **leading indicator** of AI system failure — detectable before output quality degrades. Using a controlled experiment with constrained context windows, forced summarization, and progressive content contamination, we show that the standard deviation (σ) of the alignment bell curve signals structural degradation **3 steps before** output evaluation catches the failure. We introduce **Bell Tuning** — the practice of continuously reading and reacting to this distribution as a workflow signal — and Context Inspector, an open-source, MCP-aware instrument that operationalizes Bell Tuning in any AI system.
@@ -167,3 +179,20 @@ The gap between the structural signal and the output failure is the intervention
 *Source: [github.com/kevin-luddy39/context-inspector](https://github.com/kevin-luddy39/context-inspector) | npm: [contrarianai-context-inspector](https://www.npmjs.com/package/contrarianai-context-inspector)*
 
 *For the full AI Production Diagnostic: [contrarianai-landing.onrender.com](https://contrarianai-landing.onrender.com)*
+
+---
+
+## If you read this far
+
+You're the reader this paper was written for. Two concrete next steps:
+
+1. **Book a free 1-hour Bell Tuning audit** (first 10 teams only):
+   → [contrarianai-landing.onrender.com/bell-tuning](https://contrarianai-landing.onrender.com/bell-tuning)
+2. **Install the instrument on your workflow** — one line:
+   → `npx contrarianai-context-inspector --install-mcp`
+
+The tool is open source. The audit is free for the first ten. Both exist because
+this paper is only useful if it survives contact with a real production system.
+If yours is one, I want to see the trace.
+
+— Kevin

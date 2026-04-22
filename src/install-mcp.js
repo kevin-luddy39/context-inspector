@@ -189,6 +189,18 @@ function runInstaller(argv) {
     console.log('    2. Look for 4 new tools: analyze_context, get_bell_curve,');
     console.log('       get_chunks, compare_alignment');
     console.log('    3. Or use the setup wizard: npx contrarianai-context-inspector --setup\n');
+    console.log('  ─────────────────────────────────────────────────────────');
+    console.log('  📄 Whitepaper (the math + the experiment):');
+    console.log('     https://github.com/kevin-luddy39/context-inspector/blob/main/docs/whitepaper.md');
+    console.log('');
+    console.log('  🔬 Full Bell Tuning suite (4 companion sensors):');
+    console.log('     npm i contrarianai-retrieval-auditor contrarianai-tool-call-grader');
+    console.log('     npm i contrarianai-predictor-corrector contrarianai-audit-report-generator');
+    console.log('');
+    console.log('  🎯 Free 1-hour audit for first 10 production users:');
+    console.log('     https://contrarianai-landing.onrender.com/bell-tuning');
+    console.log('     email kevin.luddy39@gmail.com (subj: Bell Tuning audit)');
+    console.log('  ─────────────────────────────────────────────────────────\n');
   }
 }
 
