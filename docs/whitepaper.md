@@ -186,13 +186,18 @@ The gap between the structural signal and the output failure is the intervention
 
 You're the reader this paper was written for. Two concrete next steps:
 
-1. **Book a free 1-hour Bell Tuning audit** (first 10 teams only):
-   → [contrarianai-landing.onrender.com/bell-tuning](https://contrarianai-landing.onrender.com/bell-tuning)
-2. **Install the instrument on your workflow** — one line:
+1. **Bell Tuning Rapid Audit — $2,500, 48-hour turnaround, 3 per week.**
+   Five sensors run against your retrieval / agent pipeline. 8-12 page report
+   with flagged pathologies and a prioritized fix list. 30-minute walkthrough
+   call. 7 days of follow-up Q&A.
+   → [contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html](https://contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html)
+
+2. **Install the instrument on your workflow** — one line, MIT licensed, no audit
+   needed:
    → `npx contrarianai-context-inspector --install-mcp`
 
-The tool is open source. The audit is free for the first ten. Both exist because
-this paper is only useful if it survives contact with a real production system.
-If yours is one, I want to see the trace.
+The tool is open source. The audit is paid because the work it does is the work
+it does. Both exist because this paper is only useful if it survives contact
+with a real production system. If yours is one, I want to see the trace.
 
 — Kevin
