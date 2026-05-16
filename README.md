@@ -404,6 +404,14 @@ MIT
 
 ## Need help diagnosing context rot in production?
 
+### → [Buy the Rapid Audit — $2,500 / 48hr turnaround](https://buy.stripe.com/00w28sfq5gjS6Dg4Ia9IQ00?ref=npm-readme)
+
+Productized AI agent + RAG evaluation engagement. Five sensors run against your retrieval, tool-call, and agent pipeline. PDF report with flagged pathologies, prioritized fixes, walkthrough call, 7 days of Q&A. Limited to 3/week.
+
+Want to talk first? → [contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html](https://contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html)
+
+---
+
 Context Inspector surfaces the signal. Acting on it — redesigning retrieval, rewriting prompts, rebuilding memory strategies — is where most teams get stuck.
 
 **[contrarianAI](https://contrarianai-landing.onrender.com)** consults on exactly this:
