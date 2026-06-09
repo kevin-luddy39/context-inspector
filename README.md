@@ -41,7 +41,7 @@ Context Inspector is the base sensor. Four companion tools extend the same disci
 | Tool | What it watches | Install |
 |---|---|---|
 | [**predictor-corrector**](https://www.npmjs.com/package/contrarianai-predictor-corrector) | Forecasts the bell-curve trajectory using numerical methods — detects context rot several turns ahead of output collapse | `npx contrarianai-predictor-corrector --baseline prescriptive` |
-| [**retrieval-auditor**](https://www.npmjs.com/package/contrarianai-retrieval-auditor) | RAG-specific sensor — scores each chunk-to-query alignment and flags six retrieval pathologies. Unsupervised health score tracks ground-truth precision@5 at r=0.999 | `npx contrarianai-retrieval-auditor trace.json` |
+| [**retrieval-auditor**](https://www.npmjs.com/package/contrarianai-retrieval-auditor) | RAG-specific sensor — scores each chunk-to-query alignment and flags six silent retrieval bugs. Unsupervised health score tracks ground-truth precision@5 at r=0.999 | `npx contrarianai-retrieval-auditor trace.json` |
 | [**tool-call-grader**](https://www.npmjs.com/package/contrarianai-tool-call-grader) | Multi-agent / MCP sensor — grades tool calls per-call and per-session; catches silent failures, fixation, response bloat, schema drift | `npx contrarianai-tool-call-grader session.json` |
 | [**audit-report-generator**](https://www.npmjs.com/package/contrarianai-audit-report-generator) | Consumes the output of the four sensors and emits a unified audit report in markdown, HTML, or JSON | `npx contrarianai-audit-report-generator audit.json --format html` |
 
@@ -49,7 +49,7 @@ Full manifesto + four whitepapers: [contrarianai-landing.onrender.com/bell-tunin
 
 > **Free audit offer:** The first 10 production users that email
 > `kevin.luddy39@gmail.com` (subject: "Bell Tuning audit") get a 1-hour engineer
-> sit-down on their actual traces — bell curve, pathology flags, written report.
+> sit-down on their actual traces — bell curve, silent-bug flags, written report.
 > No slides.
 
 ---
@@ -402,22 +402,22 @@ MIT
 
 ---
 
-## Need help diagnosing context rot in production?
+## Bell looking weird? Get help.
 
 ### → [Buy the Rapid Audit — $2,500 / 48hr turnaround](https://buy.stripe.com/00w28sfq5gjS6Dg4Ia9IQ00?ref=npm-readme)
 
-Productized AI agent + RAG evaluation engagement. Five sensors run against your retrieval, tool-call, and agent pipeline. PDF report with flagged pathologies, prioritized fixes, walkthrough call, 7 days of Q&A. Limited to 3/week.
+We run all five Bell Tuning sensors against your AI's search + agent pipeline and ship you an 8-12 page PDF: bell curves showing what's happening under the hood, the silent bugs we found, a ranked fix list, plus a walkthrough call and 7 days of Q&A. Limited to 3 slots a week.
 
-Want to talk first? → [contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html](https://contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html)
+Want to talk first? → [Free 30-min call](https://contrarianai-landing.onrender.com/bell-tuning-rapid-audit.html)
 
 ---
 
-Context Inspector surfaces the signal. Acting on it — redesigning retrieval, rewriting prompts, rebuilding memory strategies — is where most teams get stuck.
+Context Inspector spots the bug. Fixing it — redesigning the search step, rewriting prompts, rebuilding how memory works — is where most teams get stuck.
 
-**[contrarianAI](https://contrarianai-landing.onrender.com)** consults on exactly this:
+**[contrarianAI](https://contrarianai-landing.onrender.com)** does this work:
 
-- **Context audits** — we instrument your pipeline, find where the bell curve collapses, and show you why.
-- **Architecture reviews** — RAG, multi-agent, long-running chat. We pressure-test the parts you can't see failing yet.
-- **White-paper-grade diagnostics** — the same methodology documented in [`docs/whitepaper.md`](docs/whitepaper.md), applied to your system.
+- **Context audits** — we hook into your pipeline, find where the bell curve collapses, and show you why.
+- **Architecture reviews** — for AI that looks things up (RAG), multiple agents working together, or long-running chat. We pressure-test the parts you can't see failing yet.
+- **Whitepaper-grade diagnostics** — the same method documented in [`docs/whitepaper.md`](docs/whitepaper.md), applied to your system.
 
-We find what's actually wrong with your AI before your users do. → **[contrarianai-landing.onrender.com](https://contrarianai-landing.onrender.com)**
+We find what's actually broken in your AI before your users do. → **[contrarianai-landing.onrender.com](https://contrarianai-landing.onrender.com)**

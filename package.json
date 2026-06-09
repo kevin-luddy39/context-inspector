@@ -1,7 +1,7 @@
 {
   "name": "contrarianai-context-inspector",
-  "version": "0.2.18",
-  "description": "Statistical early warning for AI context window degradation. MCP-aware drop-in that monitors domain alignment, detects context rot, and surfaces the bell curve signal before output fails.",
+  "version": "0.2.19",
+  "description": "See AI bugs before they ship. Free bell-curve sensor that watches your AI's working memory in real time. Plugs into Claude Desktop, Cursor, Cline, Windsurf, Claude Code. MIT-licensed.",
   "keywords": [
     "ai",
     "llm",
@@ -47,6 +47,7 @@
     "cli": "node bin/cli.js",
     "mcp": "node src/mcp-server.js",
     "test": "node test/run.js",
+    "postinstall": "node bin/postinstall.js || true",
     "prepublishOnly": "npm test"
   },
   "dependencies": {
