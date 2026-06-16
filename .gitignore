@@ -6,3 +6,6 @@ Thumbs.db
 coverage/
 leads.json
 .smithery/
+
+# npm pack build artifacts
+*.tgz
